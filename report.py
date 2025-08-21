@@ -35,7 +35,7 @@ else:
 
     # Apply filters
     if len(Delivery_Date_range) == 2:
-        df = df[(df["Delivery Date"] >= pd.to_Delivery date time(Delivery_Date_range[0])) & (df["Delivery Date"] <= pd.to_datetime(Delivery_Date_range[1]))]
+        df = df[(df["Delivery_Date"] >= pd.to_Delivery_date time(Delivery_Date_range[0])) & (df["Delivery_Date"] <= pd.to_datetime(Delivery_Date_range[1]))]
     if REGION:
         df = df[df["REGION"].isin(REGION)]
     if plant_name:

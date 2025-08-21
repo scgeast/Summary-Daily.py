@@ -23,7 +23,7 @@ else:
 
     # Filter sidebar
     st.sidebar.header("Filter Data")
-    min_Delivery_Date = df["Delivery_Date"].min()
+    min_Delivery_Date = df["Delivery Date"].min()
     max_Delivery_Date = df["Delivery_Date"].max()
     Delivery_Date_range = st.sidebar.Delivery_Date_input("Delivery_Date Range", [min_Delivery_Date, max_Delivery_Date])
     REGION = st.sidebar.multiselect("REGION", options=df["REGION"].unique())

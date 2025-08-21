@@ -27,8 +27,11 @@ if uploaded_file:
     sales_man = st.sidebar.multiselect("Sales Man", options=df["Sales Man"].unique())
 
     if len(Delivery_Date_range) == 2:
-        df = df[(df["Delivery Date"] >= pd.to_datetime(Delivery_Date_range)) & 
-                (df["Delivery Date"] <= pd.to_datetime(Delivery_Date_range))]
+       df['Delivery Date'] = pd.to_datetime(df['Delivery Date'])  # pastikan kolom tanggal dalam format datetime
+start_date = pd.to_datetime('2025-08-01')  # contoh tanggal mulai
+end_date = pd.to_datetime('2025-08-21')    # contoh tanggal selesai
+
+filtered_df = df[(df['Delivery Date'] >= start_date) & (df['Delivery Date'] <= end_date)]
     if REGION:
         df = df[df["REGION"].isin(REGION)]
     if plant_name:

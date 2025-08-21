@@ -74,4 +74,4 @@ if uploaded_file:
 else:
     st.write("Tolong upload file Excel dulu ya.")
 
-print(df.columns.tolist())
+

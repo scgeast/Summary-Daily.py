@@ -79,3 +79,5 @@ if uploaded_file:
     excel_data = to_excel(df)
     st.download_button(label='Download filtered data as Excel', data=excel_data, file_name='filtered_report.xlsx', mime='application/vnd.ms-excel')
 
+python
+print(df.columns.tolist())

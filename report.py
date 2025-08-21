@@ -15,6 +15,11 @@ uploaded_file = st.file_uploader("Upload file Excel (5MB-25MB)", type=["xlsx", "
 if uploaded_file:
     # Baca file Excel
     df = pd.read_excel(uploaded_file)
+    st.write("Kolom di file Excel:",
+    df.columns.tolist())  # Cek kolom DataFrame
+    # kode lain yang pakai df di sini
+else:
+    st.write("Tolong upload file Excel dulu ya.")
 
     # Filter sidebar
     st.sidebar.header("Filter Data")

@@ -23,9 +23,9 @@ else:
 
     # Filter sidebar
     st.sidebar.header("Filter Data")
-    min_date = df["Delivery Date"].min()
-    max_date = df["Delivery Date"].max()
-    dp_date_range = st.sidebar.date_input("Delivery Date Range", [min_date, max_date])
+    min_Delivery Date = df["Delivery Date"].min()
+    max_Delivery Date = df["Delivery Date"].max()
+    Delivery_Date_range = st.sidebar.Delivery Date_input("Delivery Date Range", [min_Delivery Date, max_Delivery Date])
     REGION = st.sidebar.multiselect("REGION", options=df["REGION"].unique())
     plant_name = st.sidebar.multiselect("Plant Name", options=df["Plant Name"].unique())
     end_customer = st.sidebar.multiselect("End Customer Name", options=df["End Customer Name"].unique())
@@ -34,8 +34,8 @@ else:
     sales_man = st.sidebar.multiselect("Sales Man", options=df["Sales Man"].unique())
 
     # Apply filters
-    if len(dp_date_range) == 2:
-        df = df[(df["Delivery Date"] >= pd.to_datetime(Delivery_Date_range[0])) & (df["Delivery Date"] <= pd.to_datetime(Delivery_Date_range[1]))]
+    if len(Delivery_Date_range) == 2:
+        df = df[(df["Delivery Date"] >= pd.to_Delivery date time(Delivery_Date_range[0])) & (df["Delivery Date"] <= pd.to_datetime(Delivery_Date_range[1]))]
     if REGION:
         df = df[df["REGION"].isin(REGION)]
     if plant_name:

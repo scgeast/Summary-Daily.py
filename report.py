@@ -80,8 +80,9 @@ if uploaded_file:
     st.download_button(label='Download filtered data as Excel', data=excel_data, file_name='filtered_report.xlsx', mime='application/vnd.ms-excel')
 
 
-Pastikan Anda telah menambahkan plotly ke file requirements.txt di repositori GitHub Anda. Contohnya:
-
+requirements.txt
 streamlit
 pandas
 plotly
+xlsxwriter
+openpyxl

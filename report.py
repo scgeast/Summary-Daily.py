@@ -32,7 +32,7 @@ start_date = pd.to_datetime('2025-08-01')  # contoh tanggal mulai
 end_date = pd.to_datetime('2025-08-21')    # contoh tanggal selesai
 
 filtered_df = df[(df['Delivery Date'] >= start_date) & (df['Delivery Date'] <= end_date)]
-    if REGION:
+if REGION:
         df = df[df["REGION"].isin(REGION)]
     if plant_name:
         df = df[df["Plant Name"].isin(plant_name)]

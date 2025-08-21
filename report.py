@@ -18,9 +18,9 @@ if uploaded_file:
 
     # Filter sidebar
     st.sidebar.header("Filter Data")
-    min_date = df["DP Date"].min()
-    max_date = df["DP Date"].max()
-    dp_date_range = st.sidebar.date_input("DP Date Range", [min_date, max_date])
+    min_date = df["Delivery Date"].min()
+    max_date = df["Delivery Date"].max()
+    dp_date_range = st.sidebar.date_input("Delivery Date Range", [min_date, max_date])
     REGION = st.sidebar.multiselect("REGION", options=df["REGION"].unique())
     plant_name = st.sidebar.multiselect("Plant Name", options=df["Plant Name"].unique())
     end_customer = st.sidebar.multiselect("End Customer Name", options=df["End Customer Name"].unique())
@@ -30,7 +30,7 @@ if uploaded_file:
 
     # Apply filters
     if len(dp_date_range) == 2:
-        df = df[(df["DP Date"] >= pd.to_datetime(dp_date_range[0])) & (df["DP Date"] <= pd.to_datetime(dp_date_range[1]))]
+        df = df[(df["Delivery Date"] >= pd.to_datetime(Delivery_Date_range[0])) & (df["Delivery Date"] <= pd.to_datetime(Delivery_Date_range[1]))]
     if REGION:
         df = df[df["REGION"].isin(REGION)]
     if plant_name:

@@ -80,7 +80,7 @@ if uploaded_file:
     st.download_button(label='Download filtered data as Excel', data=excel_data, file_name='filtered_report.xlsx', mime='application/vnd.ms-excel')
 
 
-requirements.txt
+
 streamlit
 pandas
 plotly

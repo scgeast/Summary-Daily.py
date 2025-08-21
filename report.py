@@ -11,7 +11,7 @@ st.title("Dashboard Summary Reporting")
 uploaded_file = st.file_uploader("Upload file Excel (5MB-25MB)", type=["xlsx", "xls"])
 
 if uploaded_file:
-    df = pd.read_excel(uploaded_file)
+    df = pd.read_excel(uploaded_file, engine='openpyxl')
     st.write("Kolom di file Excel:", df.columns.tolist())
 
     st.sidebar.header("Filter Data")

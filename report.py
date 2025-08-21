@@ -17,7 +17,7 @@ if uploaded_file:
     st.sidebar.header("Filter Data")
     min_Delivery_Date = df["Delivery Date"].min()
     max_Delivery_Date = df["Delivery Date"].max()
-    
+
     Delivery_Date_range = st.sidebar.date_input("Delivery Date Range", [min_Delivery_Date, max_Delivery_Date])
     REGION = st.sidebar.multiselect("REGION", options=df["REGION"].unique())
     plant_name = st.sidebar.multiselect("Plant Name", options=df["Plant Name"].unique())
@@ -27,7 +27,8 @@ if uploaded_file:
     sales_man = st.sidebar.multiselect("Sales Man", options=df["Sales Man"].unique())
 
     if len(Delivery_Date_range) == 2:
-        df = df[(df["Delivery Date"] >= pd.to_datetime(Delivery_Date_range)) & (df["Delivery Date"] <= pd.to_datetime(Delivery_Date_range))]
+        df = df[(df["Delivery Date"] >= pd.to_datetime(Delivery_Date_range)) & 
+                (df["Delivery Date"] <= pd.to_datetime(Delivery_Date_range))]
     if REGION:
         df = df[df["REGION"].isin(REGION)]
     if plant_name:
@@ -45,18 +46,21 @@ if uploaded_file:
     st.write(df.describe(include='all'))
 
     QTY_REGION = df.groupby("REGION")["QTY"].sum().reset_index()
-    fig1 = px.bar(QTY_REGION, x="REGION", y="QTY", text="QTY", color="REGION", color_discrete_sequence=px.colors.qualitative.Bold)
+    fig1 = px.bar(QTY_REGION, x="REGION", y="QTY", text="QTY", 
+                  color="REGION", color_discrete_sequence=px.colors.qualitative.Bold)
     fig1.update_traces(textposition='outside')
     fig1.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
     st.plotly_chart(fig1, use_container_width=True)
 
     qty_sales = df.groupby("Sales Man")["QTY"].sum().reset_index()
-    fig2 = px.bar(qty_sales, x="Sales Man", y="QTY", text="QTY", color="Sales Man", color_discrete_sequence=px.colors.qualitative.Set3)
+    fig2 = px.bar(qty_sales, x="Sales Man", y="QTY", text="QTY", 
+                  color="Sales Man", color_discrete_sequence=px.colors.qualitative.Set3)
     fig2.update_traces(textposition='outside')
     st.plotly_chart(fig2, use_container_width=True)
 
     dist_plant = df.groupby("Plant Name")["Distance"].mean().reset_index()
-    fig3 = px.bar(dist_plant, x="Plant Name", y="Distance", text=dist_plant["Distance"].round(2), color="Plant Name", color_discrete_sequence=px.colors.qualitative.Pastel)
+    fig3 = px.bar(dist_plant, x="Plant Name", y="Distance", 
+                  text=dist_plant["Distance"].round(2), color="Plant Name", color_discrete_sequence=px.colors.qualitative.Pastel)
     fig3.update_traces(textposition='outside')
     st.plotly_chart(fig3, use_container_width=True)
 
@@ -69,8 +73,9 @@ if uploaded_file:
         return processed_data
 
     excel_data = to_excel(df)
-    st.download_button(label='Download filtered data as Excel', data=excel_data, file_name='filtered_report.xlsx', mime='application/vnd.ms-excel')
-
+    st.download_button(label='Download filtered data as Excel', 
+                       data=excel_data, file_name='filtered_report.xlsx', 
+                       mime='application/vnd.ms-excel')
 else:
     st.write("Tolong upload file Excel dulu ya.")
 

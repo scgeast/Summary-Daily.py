@@ -160,16 +160,19 @@ DF_DIST = col_distance
 DF_TRCK = col_truck
 DF_ENDC = col_endcust
 
-# ========== SIDEBAR FILTERS ==========
-st.sidebar.header("🔍 Filter Data")
+# ========== FILTER DATA (DIPINDAH KE ATAS) ==========
+st.markdown("<div class='section-title'>🔍 Filter Data</div>", unsafe_allow_html=True)
 min_d = df[DF_DATE].min().date()
 max_d = df[DF_DATE].max().date()
-start_date = st.sidebar.date_input("Start Date", min_d)
-end_date   = st.sidebar.date_input("End Date", max_d)
+start_date, end_date = st.columns(2)
+with start_date:
+    start_date = st.date_input("Start Date", min_d)
+with end_date:
+    end_date   = st.date_input("End Date", max_d)
 
 if DF_AREA:
     areas = ["All"] + sorted(df[DF_AREA].dropna().astype(str).unique().tolist())
-    sel_area = st.sidebar.selectbox("Area", areas)
+    sel_area = st.selectbox("Area", areas)
 else:
     sel_area = "All"
 
@@ -181,11 +184,11 @@ if DF_PLNT:
         )
     else:
         plants = ["All"] + sorted(df[DF_PLNT].dropna().astype(str).unique().tolist())
-    sel_plant = st.sidebar.selectbox("Plant Name", plants)
+    sel_plant = st.selectbox("Plant Name", plants)
 else:
     sel_plant = "All"
 
-if st.sidebar.button("🔄 Reset Filter"):
+if st.button("🔄 Reset Filter"):
     st.experimental_rerun()
 
 mask = (df[DF_DATE].dt.date >= start_date) & (df[DF_DATE].dt.date <= end_date)
@@ -238,11 +241,27 @@ st.markdown("<div class='section-title'>🎛️ Pilih Dashboard</div>", unsafe_a
 pick = st.radio("", ["Logistic", "Sales & End Customer"], horizontal=True)
 
 # ----------------------------------------------------
-# DASHBOARD 1: LOGISTIC
+# LOGISTIC
 # ----------------------------------------------------
 if pick == "Logistic":
     st.markdown("<div class='section-title'>📦 Logistic</div>", unsafe_allow_html=True)
-    st.markdown("<div class='subtitle'>🚚 Delivery Performance per Day</div>", unsafe_allow_html=True)
+
+    # ========== Distance Analysis diganti LINE ==========
+    st.markdown("<div class='subtitle'>📏 Distance Analysis</div>", unsafe_allow_html=True)
+    if DF_DIST:
+        dist_daily = (
+            df_f.groupby(DF_DATE, as_index=False)[DF_DIST]
+            .mean()
+            .rename(columns={DF_DIST: "Avg Distance"})
+        )
+        fig_line = px.line(dist_daily, x=DF_DATE, y="Avg Distance", markers=True,
+                           template=chart_template, title="Avg Distance per Day")
+        fig_line.update_traces(line_color=accent, marker=dict(size=8, color=accent_light))
+        st.plotly_chart(fig_line, use_container_width=True)
+    else:
+        st.info("Kolom Distance tidak ditemukan.")
+
+# (sisanya tetap sama dengan dashboard Logistic & Sales)
 
     # Chart: Total Volume / Day
     vol_day = (

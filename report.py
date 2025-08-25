@@ -140,29 +140,29 @@ def line_chart(df, x, y, title):
     return fig
 
 
-# ========== UPLOAD DATA ==========
-with st.expander("📂 Upload File Data", expanded=False):  
-    actual_file = st.file_uploader("Upload File Actual (Excel)", type=["xlsx", "xls"])
-    target_file = st.file_uploader("Upload File Target (Excel)", type=["xlsx", "xls"])
+# ========== UPLOAD DATA DI SIDEBAR ==========
+st.sidebar.header("📂 Upload File Data")
+actual_file = st.sidebar.file_uploader("Upload File Actual (Excel)", type=["xlsx", "xls"])
+target_file = st.sidebar.file_uploader("Upload File Target (Excel)", type=["xlsx", "xls"])
 
-# Cek file actual
 if actual_file is None:
-    st.info("Silakan upload file Excel delivery terlebih dahulu (ukuran 2MB–50MB).")
+    st.info("Silakan upload file Actual terlebih dahulu (ukuran 2MB–50MB).")
     st.stop()
 
-# Cek ukuran file
+# Optional: batasi ukuran file
 size_mb = actual_file.size / (1024 * 1024)
 if size_mb < 2 or size_mb > 50:
     st.error("⚠️ File harus berukuran antara 2MB - 50MB")
     st.stop()
 
-# Baca file actual
+# Baca file
 try:
     xls = pd.ExcelFile(actual_file)
     df_raw = xls.parse(0)
 except Exception as e:
     st.error(f"Gagal membaca file: {e}")
     st.stop()
+
 
 # Normalisasi kolom
 df = normalize_columns(df_raw)

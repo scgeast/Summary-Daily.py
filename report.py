@@ -246,23 +246,6 @@ pick = st.radio("", ["Logistic", "Sales & End Customer"], horizontal=True)
 if pick == "Logistic":
     st.markdown("<div class='section-title'>📦 Logistic</div>", unsafe_allow_html=True)
 
-    # ========== Distance Analysis diganti LINE ==========
-    st.markdown("<div class='subtitle'>📏 Distance Analysis</div>", unsafe_allow_html=True)
-    if DF_DIST:
-        dist_daily = (
-            df_f.groupby(DF_DATE, as_index=False)[DF_DIST]
-            .mean()
-            .rename(columns={DF_DIST: "Avg Distance"})
-        )
-        fig_line = px.line(dist_daily, x=DF_DATE, y="Avg Distance", markers=True,
-                           template=chart_template, title="Avg Distance per Day")
-        fig_line.update_traces(line_color=accent, marker=dict(size=8, color=accent_light))
-        st.plotly_chart(fig_line, use_container_width=True)
-    else:
-        st.info("Kolom Distance tidak ditemukan.")
-
-# (sisanya tetap sama dengan dashboard Logistic & Sales)
-
     # Chart: Total Volume / Day
     vol_day = (
         df_f.groupby(DF_DATE, as_index=False)[DF_QTY]

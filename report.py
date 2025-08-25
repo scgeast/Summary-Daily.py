@@ -155,10 +155,13 @@ if target_file is None:
 else:
     df_target = pd.read_excel(target_file)
 
-size_mb = uploaded.size / (1024 * 1024)
-if size_mb < 2 or size_mb > 50:
-    st.error("⚠️ File harus berukuran antara 2MB - 50MB")
-    st.stop()
+if actual_file is not None:
+    size_mb = actual_file.size / (1024 * 1024)
+    st.caption(f"📄 File Actual: {actual_file.name} ({size_mb:.2f} MB)")
+if target_file is not None:
+    size_mb = target_file.size / (1024 * 1024)
+    st.caption(f"🎯 File Target: {target_file.name} ({size_mb:.2f} MB)")
+
 
 try:
     xls = pd.ExcelFile(uploaded)

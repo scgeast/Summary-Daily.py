@@ -140,29 +140,54 @@ def line_chart(df, x, y, title):
     return fig
 
 
-# ========== UPLOAD DATA ==========
-with st.expander("📂 Upload File Data", expanded=False):  
-    actual_file = st.file_uploader("Upload File Actual (Excel)", type=["xlsx", "xls"])
-    target_file = st.file_uploader("Upload File Target (Excel)", type=["xlsx", "xls"])
-    
-if File Actual is None:
-    st.info("Silakan upload file Excel delivery terlebih dahulu (ukuran 2MB–50MB).")
+# =========================
+# File Upload Section (Sidebar + Expand/Collapse)
+# =========================
+with st.sidebar:
+    with st.expander("📂 Upload Data Files", expanded=False):  
+        actual_file = st.file_uploader("Upload File Actual", type=["xlsx", "xls"], key="actual")
+        target_file = st.file_uploader("Upload File Target", type=["xlsx", "xls"], key="target")
+
+# =========================
+# Load Data
+# =========================
+df_actual, df_target = None, None
+
+if actual_file is not None:
+    try:
+        df_actual = pd.read_excel(actual_file)
+        size_mb = actual_file.size / (1024 * 1024)
+        st.sidebar.caption(f"📄 File Actual: {actual_file.name} ({size_mb:.2f} MB)")
+    except Exception as e:
+        st.error(f"Gagal membaca file Actual: {e}")
+
+if target_file is not None:
+    try:
+        df_target = pd.read_excel(target_file)
+        size_mb = target_file.size / (1024 * 1024)
+        st.sidebar.caption(f"🎯 File Target: {target_file.name} ({size_mb:.2f} MB)")
+    except Exception as e:
+        st.error(f"Gagal membaca file Target: {e}")
+
+# =========================
+# Tentukan DataFrame utama
+# =========================
+df_raw = None
+if df_actual is not None:
+    df_raw = df_actual.copy()
+elif df_target is not None:
+    df_raw = df_target.copy()
+
+if df_raw is None:
+    st.warning("⚠️ Silakan upload minimal 1 file (Actual atau Target).")
     st.stop()
 
-size_mb = uploaded.size / (1024 * 1024)
-if size_mb < 2 or size_mb > 50:
-    st.error("⚠️ File harus berukuran antara 2MB - 50MB")
-    st.stop()
-
-try:
-    xls = pd.ExcelFile(uploaded)
-    df_raw = xls.parse(0)
-except Exception as e:
-    st.error(f"Gagal membaca file: {e}")
-    st.stop()
-
+# Normalisasi nama kolom biar tidak sensitif huruf besar / spasi
 df = normalize_columns(df_raw)
 
+# =========================
+# Mapping Kolom
+# =========================
 col_dp_date = match_col(df, ["dp date", "delivery date", "tanggal pengiriman", "dp_date", "tanggal_pengiriman"]) or "dp date"
 col_qty     = match_col(df, ["qty", "quantity", "volume"]) or "qty"
 col_sales   = match_col(df, ["sales man", "salesman", "sales name", "sales_name"]) or "sales man"
@@ -185,10 +210,14 @@ if missing:
     st.error("Kolom wajib tidak ditemukan: " + ", ".join(label_missing))
     st.stop()
 
+# =========================
+# Preprocessing Data
+# =========================
 df[col_dp_date] = pd.to_datetime(df[col_dp_date], errors="coerce")
 df = df.dropna(subset=[col_dp_date])
 df[col_qty] = pd.to_numeric(df[col_qty], errors="coerce").fillna(0)
 
+# Variabel Global
 DF_DATE = col_dp_date
 DF_QTY  = col_qty
 DF_SLS  = col_sales

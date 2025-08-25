@@ -336,99 +336,96 @@ pick = st.radio("", ["Logistic", "Sales & End Customer"], horizontal=True)
 # =========================
 # LOGISTIC PERFORMANCE
 # =========================
-st.markdown("<div class='section-title'>🚚 Logistic Performance</div>", unsafe_allow_html=True)
+if pick == "Logistic":
+    st.markdown("<div class='section-title'>🚚 Logistic Performance</div>", unsafe_allow_html=True)
 
-# --- Volume per Area ---
-if DF_AREA and DF_AREA in df_filtered.columns and DF_QTY in df_filtered.columns:
-    vol_area = (
-        df_filtered.groupby(DF_AREA, as_index=False)[DF_QTY]
-        .sum()
-        .rename(columns={DF_QTY: "Volume"})
-        .sort_values("Volume", ascending=False)
-    )
-    fig_area = px.pie(
-        vol_area, names=DF_AREA, values="Volume", template=chart_template,
-        title="Total Volume per Area (Pie)"
-    )
-    st.plotly_chart(fig_area, use_container_width=True)
+    # --- Volume per Area ---
+    if DF_AREA and DF_AREA in df_filtered.columns and DF_QTY in df_filtered.columns:
+        vol_area = (
+            df_filtered.groupby(DF_AREA, as_index=False)[DF_QTY]
+            .sum()
+            .rename(columns={DF_QTY: "Volume"})
+            .sort_values("Volume", ascending=False)
+        )
+        fig_area = px.pie(
+            vol_area, names=DF_AREA, values="Volume", template=chart_template,
+            title="Total Volume per Area (Pie)"
+        )
+        st.plotly_chart(fig_area, use_container_width=True)
 
-# --- Volume per Plant ---
-if DF_PLNT and DF_PLNT in df_filtered.columns and DF_QTY in df_filtered.columns:
-    vol_plant = (
-        df_filtered.groupby(DF_PLNT, as_index=False)[DF_QTY]
-        .sum()
-        .rename(columns={DF_QTY: "Actual"})
-    )
-    fig_plant = px.bar(
-        vol_plant, x=DF_PLNT, y="Actual", template=chart_template,
-        title="Total Volume per Plant", text_auto=True
-    )
-    st.plotly_chart(fig_plant, use_container_width=True)
+    # --- Volume per Plant ---
+    if DF_PLNT and DF_PLNT in df_filtered.columns and DF_QTY in df_filtered.columns:
+        vol_plant = (
+            df_filtered.groupby(DF_PLNT, as_index=False)[DF_QTY]
+            .sum()
+            .rename(columns={DF_QTY: "Actual"})
+        )
+        fig_plant = px.bar(
+            vol_plant, x=DF_PLNT, y="Actual", template=chart_template,
+            title="Total Volume per Plant", text_auto=True
+        )
+        st.plotly_chart(fig_plant, use_container_width=True)
 
-# --- Truck Utilization ---
-if DF_TRCK and DF_TRIP and DF_TRCK in df_filtered.columns and DF_TRIP in df_filtered.columns:
-    truck_util = (
-        df_filtered.groupby(DF_TRCK, as_index=False)[DF_TRIP]
-        .nunique()
-        .rename(columns={DF_TRIP: "Total Trip"})
-    )
-    fig_truck = px.bar(
-        truck_util, x=DF_TRCK, y="Total Trip", template=chart_template,
-        title="Truck Utilization", text_auto=True
-    )
-    st.plotly_chart(fig_truck, use_container_width=True)
+    # --- Truck Utilization ---
+    if DF_TRCK and DF_TRIP and DF_TRCK in df_filtered.columns and DF_TRIP in df_filtered.columns:
+        truck_util = (
+            df_filtered.groupby(DF_TRCK, as_index=False)[DF_TRIP]
+            .nunique()
+            .rename(columns={DF_TRIP: "Total Trip"})
+        )
+        fig_truck = px.bar(
+            truck_util, x=DF_TRCK, y="Total Trip", template=chart_template,
+            title="Truck Utilization", text_auto=True
+        )
+        st.plotly_chart(fig_truck, use_container_width=True)
+
+    # --- Distance Analysis ---
+    if DF_DIST and DF_DIST in df_filtered.columns:
+        if DF_AREA and DF_AREA in df_filtered.columns:
+            dist_area = (
+                df_filtered.groupby(DF_AREA, as_index=False)[DF_DIST]
+                .mean()
+                .rename(columns={DF_DIST: "Avg Distance"})
+            )
+            fig_dist = px.bar(
+                dist_area, x=DF_AREA, y="Avg Distance", template=chart_template,
+                title="Average Distance per Area", text_auto=True
+            )
+            st.plotly_chart(fig_dist, use_container_width=True)
+    else:
+        st.info("Kolom Distance tidak ditemukan di file.")
 
 
 # =========================
 # SALES PERFORMANCE
 # =========================
-st.markdown("<div class='section-title'>💰 Sales Performance</div>", unsafe_allow_html=True)
+elif pick == "Sales & End Customer":
+    st.markdown("<div class='section-title'>💰 Sales Performance</div>", unsafe_allow_html=True)
 
-# --- Volume per Salesman ---
-if DF_SLS and DF_SLS in df_filtered.columns and DF_QTY in df_filtered.columns:
-    vol_sales = (
-        df_filtered.groupby(DF_SLS, as_index=False)[DF_QTY]
-        .sum()
-        .rename(columns={DF_QTY: "Volume"})
-        .sort_values("Volume", ascending=False)
-    )
-    fig_sales = px.bar(
-        vol_sales, x=DF_SLS, y="Volume", template=chart_template,
-        title="Total Volume per Salesman", text_auto=True
-    )
-    st.plotly_chart(fig_sales, use_container_width=True)
-
-# --- Volume per End Customer ---
-if DF_ENDC and DF_ENDC in df_filtered.columns and DF_QTY in df_filtered.columns:
-    vol_endcust = (
-        df_filtered.groupby(DF_ENDC, as_index=False)[DF_QTY]
-        .sum()
-        .rename(columns={DF_QTY: "Volume"})
-        .sort_values("Volume", ascending=False)
-    )
-    fig_endcust = px.bar(
-        vol_endcust.head(15), x=DF_ENDC, y="Volume", template=chart_template,
-        title="Top 15 End Customer by Volume", text_auto=True
-    )
-    st.plotly_chart(fig_endcust, use_container_width=True)
-
-
-# =========================
-# DISTANCE ANALYSIS
-# =========================
-st.markdown("<div class='section-title'>📏 Distance Analysis</div>", unsafe_allow_html=True)
-
-if DF_DIST and DF_DIST in df_filtered.columns:
-    if DF_AREA and DF_AREA in df_filtered.columns:
-        dist_area = (
-            df_filtered.groupby(DF_AREA, as_index=False)[DF_DIST]
-            .mean()
-            .rename(columns={DF_DIST: "Avg Distance"})
+    # --- Volume per Salesman ---
+    if DF_SLS and DF_SLS in df_filtered.columns and DF_QTY in df_filtered.columns:
+        vol_sales = (
+            df_filtered.groupby(DF_SLS, as_index=False)[DF_QTY]
+            .sum()
+            .rename(columns={DF_QTY: "Volume"})
+            .sort_values("Volume", ascending=False)
         )
-        fig_dist = px.bar(
-            dist_area, x=DF_AREA, y="Avg Distance", template=chart_template,
-            title="Average Distance per Area", text_auto=True
+        fig_sales = px.bar(
+            vol_sales, x=DF_SLS, y="Volume", template=chart_template,
+            title="Total Volume per Salesman", text_auto=True
         )
-        st.plotly_chart(fig_dist, use_container_width=True)
-else:
-    st.info("Kolom Distance tidak ditemukan di file.")
+        st.plotly_chart(fig_sales, use_container_width=True)
+
+    # --- Volume per End Customer ---
+    if DF_ENDC and DF_ENDC in df_filtered.columns and DF_QTY in df_filtered.columns:
+        vol_endcust = (
+            df_filtered.groupby(DF_ENDC, as_index=False)[DF_QTY]
+            .sum()
+            .rename(columns={DF_QTY: "Volume"})
+            .sort_values("Volume", ascending=False)
+        )
+        fig_endcust = px.bar(
+            vol_endcust.head(15), x=DF_ENDC, y="Volume", template=chart_template,
+            title="Top 15 End Customer by Volume", text_auto=True
+        )
+        st.plotly_chart(fig_endcust, use_container_width=True)

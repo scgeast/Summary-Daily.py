@@ -229,53 +229,55 @@ DF_TRCK = col_truck
 DF_ENDC = col_endcust
 
 # =========================
-# Filter Section (Main Area)
+# FILTER SECTION (Expander di Atas)
 # =========================
-with st.expander("🔎 Filter Data", expanded=True):  
-    
-    # Filter Tanggal
-    if DF_DATE in df.columns:
-        min_date = df[DF_DATE].min()
-        max_date = df[DF_DATE].max()
-        date_range = st.date_input("Pilih Rentang Tanggal", [min_date, max_date])
+with st.expander("🔍 Filter Data", expanded=True):
+    # Date Filter
+    if DF_DATE and DF_DATE in df.columns:
+        min_date, max_date = df[DF_DATE].min(), df[DF_DATE].max()
+        date_range = st.date_input("📅 Pilih Rentang Tanggal", [min_date, max_date])
         if isinstance(date_range, list) and len(date_range) == 2:
-            start_date, end_date = date_range
-            df = df[(df[DF_DATE] >= pd.to_datetime(start_date)) & (df[DF_DATE] <= pd.to_datetime(end_date))]
+            df = df[(df[DF_DATE] >= pd.to_datetime(date_range[0])) & 
+                    (df[DF_DATE] <= pd.to_datetime(date_range[1]))]
 
-       # Filter Area
+    # Sales Filter
+    if DF_SLS and DF_SLS in df.columns:
+        sales_options = df[DF_SLS].dropna().unique().tolist()
+        selected_sales = st.multiselect("👨‍💼 Pilih Sales Man", sales_options, default=sales_options)
+        df = df[df[DF_SLS].isin(selected_sales)]
+
+    # Area Filter
     if DF_AREA and DF_AREA in df.columns:
         area_options = df[DF_AREA].dropna().unique().tolist()
-        selected_area = st.multiselect("Pilih Area", area_options, default=area_options)
+        selected_area = st.multiselect("🌍 Pilih Area", area_options, default=area_options)
         df = df[df[DF_AREA].isin(selected_area)]
 
-    # Filter Plant
+    # Plant Filter
     if DF_PLNT and DF_PLNT in df.columns:
         plant_options = df[DF_PLNT].dropna().unique().tolist()
-        selected_plant = st.multiselect("Pilih Plant", plant_options, default=plant_options)
+        selected_plant = st.multiselect("🏭 Pilih Plant", plant_options, default=plant_options)
         df = df[df[DF_PLNT].isin(selected_plant)]
 
-# ========== SUMMARIZE (KPI CARDS) ==========
-st.markdown("<div class='section-title'>🧭 Summarize</div>", unsafe_allow_html=True)
-kpi_cols = st.columns(7)
-fmt0 = lambda x: f"{int(x):,}" if pd.notna(x) else "0"
-fmtN0 = lambda x: f"{x:,.0f}" if pd.notna(x) else "0"
+# Simpan hasil filter
+df_f = df.copy()
 
-tot_area  = df_f[DF_AREA].nunique() if DF_AREA else 0
-tot_plant = df_f[DF_PLNT].nunique() if DF_PLNT else 0
-tot_vol   = float(df_f[DF_QTY].sum())
-tot_truck = df_f[DF_TRCK].nunique() if (DF_TRCK and DF_TRCK in df_f.columns) else 0
-tot_trip  = df_f[DF_TRIP].nunique() if DF_TRIP in df_f.columns else 0
-avg_vol_day = (tot_vol / day_span) if day_span > 0 else 0
-avg_load_trip = (tot_vol / tot_trip) if tot_trip > 0 else 0
+# =========================
+# SUMMARY SECTION
+# =========================
+st.subheader("📊 Ringkasan Data")
 
-kpis = [
-    ("🌍 Total Area", fmt0(tot_area)),
-    ("🏭 Total Plant", fmt0(tot_plant)),
-    ("📦 Total Volume", fmtN0(tot_vol)),
-    ("📅 Avg Vol/Day", fmtN0(avg_vol_day)),
-    ("🚛 Total Truck", fmt0(tot_truck)),
-    ("🧾 Total Trip", fmt0(tot_trip)),
-    ("⚖️ Avg Load/Trip", fmtN0(avg_load_trip)),
+tot_area  = df_f[DF_AREA].nunique() if DF_AREA and DF_AREA in df_f.columns else 0
+tot_sales = df_f[DF_SLS].nunique() if DF_SLS and DF_SLS in df_f.columns else 0
+tot_plant = df_f[DF_PLNT].nunique() if DF_PLNT and DF_PLNT in df_f.columns else 0
+tot_trip  = df_f[DF_TRIP].nunique() if DF_TRIP and DF_TRIP in df_f.columns else 0
+tot_qty   = df_f[DF_QTY].sum() if DF_QTY and DF_QTY in df_f.columns else 0
+
+col1, col2, col3, col4, col5 = st.columns(5)
+col1.metric("🌍 Area", tot_area)
+col2.metric("👨‍💼 Sales Man", tot_sales)
+col3.metric("🏭 Plant", tot_plant)
+col4.metric("🚚 Trip (DP No)", tot_trip)
+col5.metric("📦 Total Qty", f"{tot_qty:,.0f}")
 ]
 
 for col, (label, value) in zip(kpi_cols, kpis):

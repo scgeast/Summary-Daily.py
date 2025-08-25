@@ -46,7 +46,29 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+if mode == "Dark":
+    font_color = "#fff"
+else:
+    font_color = "#111827"
 
+st.markdown(
+    f"""
+    <style>
+      .metric-card {{
+        background: linear-gradient(135deg, {card_bg} 0%, {card_bg} 70%, {accent}22 100%);
+        border: 1px solid {accent}33; border-radius: 18px; padding: 16px; box-shadow: 0 10px 30px #00000022;
+      }}
+      .metric-value {{
+        font-size: 26px; font-weight: 800; color: {font_color} !important;
+      }}
+      .metric-label {{
+        font-size: 12px; opacity: .8; text-transform: uppercase; letter-spacing:.03em;
+        color: {font_color} !important;
+      }}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 # =========================
 # Header + Realtime Clock
 # =========================

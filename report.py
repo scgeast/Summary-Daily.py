@@ -477,54 +477,68 @@ if DF_PLNT and DF_DIST and DF_PLNT in df_filtered.columns and DF_DIST in df_filt
 elif pick == "Sales & End Customer":
     st.markdown("<div class='section-title'>💰 Sales Performance</div>", unsafe_allow_html=True)
 
-    # --- Volume per Salesman ---
-    if DF_SLS and DF_SLS in df_filtered.columns and DF_QTY in df_filtered.columns:
-        vol_sales = (
-            df_filtered.groupby(DF_SLS, as_index=False)[DF_QTY]
-            .sum()
-            .rename(columns={DF_QTY: "Volume"})
-            .sort_values("Volume", ascending=False)
-        )
-        fig_sales = px.bar(
-            vol_sales,
-            x=DF_SLS,
-            y="Volume",
-            template=chart_template,
-            title="Total Volume per Salesman",
-            color=DF_SLS,
-            color_discrete_sequence=futur_colors
-        )
+    # Debug kolom
+    st.write("Kolom tersedia di data:", df_filtered.columns.tolist())
+    st.write("Kolom sales terdeteksi:", DF_SLS)
+    st.write("Kolom end customer terdeteksi:", DF_ENDC)
 
-        # Label 2 desimal, legend dihilangkan
-        fig_sales.update_traces(
-            texttemplate="%{y:.2f}",
-            textposition="outside"
-        )
-        fig_sales.update_layout(showlegend=False, yaxis_title="Volume")
-        st.plotly_chart(fig_sales, use_container_width=True)
+    # --- Volume per Salesman ---
+    if DF_SLS in df_filtered.columns and DF_QTY in df_filtered.columns:
+        if not df_filtered.empty:
+            vol_sales = (
+                df_filtered.groupby(DF_SLS, as_index=False)[DF_QTY]
+                .sum()
+                .rename(columns={DF_QTY: "Volume"})
+                .sort_values("Volume", ascending=False)
+            )
+            fig_sales = px.bar(
+                vol_sales,
+                x=DF_SLS,
+                y="Volume",
+                template=chart_template,
+                title="Total Volume per Salesman",
+                text_auto=False,
+                color=DF_SLS,
+                color_discrete_sequence=futur_colors
+            )
+            # Label 2 desimal, legend dihilangkan
+            fig_sales.update_traces(
+                texttemplate="%{y:.2f}",
+                textposition="outside"
+            )
+            fig_sales.update_layout(showlegend=False, yaxis_title="Volume")
+            st.plotly_chart(fig_sales, use_container_width=True)
+        else:
+            st.info("Data filtered kosong, tidak ada sales untuk ditampilkan.")
+    else:
+        st.warning("Kolom Sales atau Qty tidak ditemukan.")
 
     # --- Volume per End Customer ---
-    if DF_ENDC and DF_ENDC in df_filtered.columns and DF_QTY in df_filtered.columns:
-        vol_endcust = (
-            df_filtered.groupby(DF_ENDC, as_index=False)[DF_QTY]
-            .sum()
-            .rename(columns={DF_QTY: "Volume"})
-            .sort_values("Volume", ascending=False)
-        )
-        fig_endcust = px.bar(
-            vol_endcust.head(15),
-            x=DF_ENDC,
-            y="Volume",
-            template=chart_template,
-            title="Top 15 End Customer by Volume",
-            color=DF_ENDC,
-            color_discrete_sequence=futur_colors
-        )
-
-        # Label 2 desimal, legend dihilangkan
-        fig_endcust.update_traces(
-            texttemplate="%{y:.2f}",
-            textposition="outside"
-        )
-        fig_endcust.update_layout(showlegend=False, yaxis_title="Volume")
-        st.plotly_chart(fig_endcust, use_container_width=True)
+    if DF_ENDC in df_filtered.columns and DF_QTY in df_filtered.columns:
+        if not df_filtered.empty:
+            vol_endcust = (
+                df_filtered.groupby(DF_ENDC, as_index=False)[DF_QTY]
+                .sum()
+                .rename(columns={DF_QTY: "Volume"})
+                .sort_values("Volume", ascending=False)
+            )
+            fig_endcust = px.bar(
+                vol_endcust.head(15),
+                x=DF_ENDC,
+                y="Volume",
+                template=chart_template,
+                title="Top 15 End Customer by Volume",
+                text_auto=False,
+                color=DF_ENDC,
+                color_discrete_sequence=futur_colors
+            )
+            fig_endcust.update_traces(
+                texttemplate="%{y:.2f}",
+                textposition="outside"
+            )
+            fig_endcust.update_layout(showlegend=False, yaxis_title="Volume")
+            st.plotly_chart(fig_endcust, use_container_width=True)
+        else:
+            st.info("Data filtered kosong, tidak ada end customer untuk ditampilkan.")
+    else:
+        st.warning("Kolom End Customer atau Qty tidak ditemukan.")

@@ -254,7 +254,7 @@ day_span = max((end_date - start_date).days + 1, 1)
 # =========================
 st.markdown("<div class='section-title'>🧭 Summarize</div>", unsafe_allow_html=True)
 
-kpi_cols = st.columns(6)
+kpi_cols = st.columns(7)  # Ubah dari 6 ke 7 kolom agar cukup untuk 7 KPI
 
 # Formatter: tanpa desimal + koma ribuan
 fmt0 = lambda x: f"{int(x):,}" if pd.notna(x) else "0"
@@ -270,7 +270,7 @@ tot_truck = df_f[DF_TRCK].nunique() if (DF_TRCK and DF_TRCK in df_f.columns) els
 tot_trip  = df_f[DF_TRIP].nunique() if DF_TRIP in df_f.columns else 0
 # Avg volume per day (keseluruhan range filter)
 avg_vol_day = (tot_vol / day_span) if day_span > 0 else 0
-# Avg load per trip (Total Volume / Total Trip); sesuai requirement tidak gunakan desimal pada label
+# Avg load per trip (Total Volume / Total Trip)
 avg_load_trip = (tot_vol / tot_trip) if tot_trip > 0 else 0
 
 # Render kartu KPI bergaya futuristik
@@ -281,7 +281,7 @@ kpis = [
     ("📅 Avg Volume / Day", fmtN0(avg_vol_day)),
     ("🚛 Total Truck", fmt0(tot_truck)),
     ("🧾 Total Trip", fmt0(tot_trip)),
-    ("⚖️ Avg Load per Trip", fmtN0(avg_load_trip)),
+    ("⚖️ Avg Load per Trip<br><span style='font-size:11px'>(Total Volume : Total Trip)</span>", fmtN0(avg_load_trip)),
 ]
 
 for col, (label, value) in zip(kpi_cols, kpis):
@@ -295,7 +295,6 @@ for col, (label, value) in zip(kpi_cols, kpis):
         )
 
 st.markdown("<hr style='opacity:.2;'>", unsafe_allow_html=True)
-
 # =========================
 # Switcher: Pilih Dashboard
 # =========================

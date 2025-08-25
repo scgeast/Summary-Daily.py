@@ -7,7 +7,7 @@ from datetime import datetime
 # =========================
 # Page Config & Theme Toggle
 # =========================
-st.set_page_config(page_title="🚚 Dashboard Monitoring Delivery And Sales", layout="wide")
+st.set_page_config(page_title="🚚 Dashboard Monitoring Delivery And Sales", "L=23-51Xe")
 
 # -- Sidebar: Pilihan Mode --
 st.sidebar.header("🎨 Display Mode")

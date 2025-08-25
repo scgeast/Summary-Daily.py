@@ -140,54 +140,29 @@ def line_chart(df, x, y, title):
     return fig
 
 
-# =========================
-# File Upload Section (Sidebar + Expand/Collapse)
-# =========================
-with st.sidebar:
-    with st.expander("📂 Upload Data Files", expanded=False):  
-        actual_file = st.file_uploader("Upload File Actual", type=["xlsx", "xls"], key="actual")
-        target_file = st.file_uploader("Upload File Target", type=["xlsx", "xls"], key="target")
-
-# =========================
-# Load Data
-# =========================
-df_actual, df_target = None, None
-
-if actual_file is not None:
-    try:
-        df_actual = pd.read_excel(actual_file)
-        size_mb = actual_file.size / (1024 * 1024)
-        st.sidebar.caption(f"📄 File Actual: {actual_file.name} ({size_mb:.2f} MB)")
-    except Exception as e:
-        st.error(f"Gagal membaca file Actual: {e}")
-
-if target_file is not None:
-    try:
-        df_target = pd.read_excel(target_file)
-        size_mb = target_file.size / (1024 * 1024)
-        st.sidebar.caption(f"🎯 File Target: {target_file.name} ({size_mb:.2f} MB)")
-    except Exception as e:
-        st.error(f"Gagal membaca file Target: {e}")
-
-# =========================
-# Tentukan DataFrame utama
-# =========================
-df_raw = None
-if df_actual is not None:
-    df_raw = df_actual.copy()
-elif df_target is not None:
-    df_raw = df_target.copy()
-
-if df_raw is None:
-    st.warning("⚠️ Silakan upload minimal 1 file (Actual atau Target).")
+# ========== UPLOAD DATA ==========
+with st.expander("📂 Upload File Data", expanded=False):  
+    actual_file = st.file_uploader("Upload File Actual (Excel)", type=["xlsx", "xls"])
+    target_file = st.file_uploader("Upload File Target (Excel)", type=["xlsx", "xls"])
+    
+if uploaded is None:
+    st.info("Silakan upload file Excel delivery terlebih dahulu (ukuran 2MB–50MB).")
     st.stop()
 
-# Normalisasi nama kolom biar tidak sensitif huruf besar / spasi
+size_mb = uploaded.size / (1024 * 1024)
+if size_mb < 2 or size_mb > 50:
+    st.error("⚠️ File harus berukuran antara 2MB - 50MB")
+    st.stop()
+
+try:
+    xls = pd.ExcelFile(uploaded)
+    df_raw = xls.parse(0)
+except Exception as e:
+    st.error(f"Gagal membaca file: {e}")
+    st.stop()
+
 df = normalize_columns(df_raw)
 
-# =========================
-# Mapping Kolom
-# =========================
 col_dp_date = match_col(df, ["dp date", "delivery date", "tanggal pengiriman", "dp_date", "tanggal_pengiriman"]) or "dp date"
 col_qty     = match_col(df, ["qty", "quantity", "volume"]) or "qty"
 col_sales   = match_col(df, ["sales man", "salesman", "sales name", "sales_name"]) or "sales man"
@@ -210,14 +185,10 @@ if missing:
     st.error("Kolom wajib tidak ditemukan: " + ", ".join(label_missing))
     st.stop()
 
-# =========================
-# Preprocessing Data
-# =========================
 df[col_dp_date] = pd.to_datetime(df[col_dp_date], errors="coerce")
 df = df.dropna(subset=[col_dp_date])
 df[col_qty] = pd.to_numeric(df[col_qty], errors="coerce").fillna(0)
 
-# Variabel Global
 DF_DATE = col_dp_date
 DF_QTY  = col_qty
 DF_SLS  = col_sales
@@ -228,56 +199,68 @@ DF_DIST = col_distance
 DF_TRCK = col_truck
 DF_ENDC = col_endcust
 
-# =========================
-# FILTER SECTION (Expander di Atas)
-# =========================
-with st.expander("🔍 Filter Data", expanded=True):
-    # Date Filter
-    if DF_DATE and DF_DATE in df.columns:
-        min_date, max_date = df[DF_DATE].min(), df[DF_DATE].max()
-        date_range = st.date_input("📅 Pilih Rentang Tanggal", [min_date, max_date])
-        if isinstance(date_range, list) and len(date_range) == 2:
-            df = df[(df[DF_DATE] >= pd.to_datetime(date_range[0])) & 
-                    (df[DF_DATE] <= pd.to_datetime(date_range[1]))]
+# ========== FILTER DATA (DIPINDAH KE ATAS) ==========
+st.markdown("<div class='section-title'>🔍 Filter Data</div>", unsafe_allow_html=True)
+min_d = df[DF_DATE].min().date()
+max_d = df[DF_DATE].max().date()
+start_date, end_date = st.columns(2)
+with start_date:
+    start_date = st.date_input("Start Date", min_d)
+with end_date:
+    end_date   = st.date_input("End Date", max_d)
 
-    # Sales Filter
-    if DF_SLS and DF_SLS in df.columns:
-        sales_options = df[DF_SLS].dropna().unique().tolist()
-        selected_sales = st.multiselect("👨‍💼 Pilih Sales Man", sales_options, default=sales_options)
-        df = df[df[DF_SLS].isin(selected_sales)]
+if DF_AREA:
+    areas = ["All"] + sorted(df[DF_AREA].dropna().astype(str).unique().tolist())
+    sel_area = st.selectbox("Area", areas)
+else:
+    sel_area = "All"
 
-    # Area Filter
-    if DF_AREA and DF_AREA in df.columns:
-        area_options = df[DF_AREA].dropna().unique().tolist()
-        selected_area = st.multiselect("🌍 Pilih Area", area_options, default=area_options)
-        df = df[df[DF_AREA].isin(selected_area)]
+if DF_PLNT:
+    if DF_AREA and sel_area != "All":
+        plants = ["All"] + sorted(
+            df[df[DF_AREA].astype(str) == str(sel_area)][DF_PLNT]
+            .dropna().astype(str).unique().tolist()
+        )
+    else:
+        plants = ["All"] + sorted(df[DF_PLNT].dropna().astype(str).unique().tolist())
+    sel_plant = st.selectbox("Plant Name", plants)
+else:
+    sel_plant = "All"
 
-    # Plant Filter
-    if DF_PLNT and DF_PLNT in df.columns:
-        plant_options = df[DF_PLNT].dropna().unique().tolist()
-        selected_plant = st.multiselect("🏭 Pilih Plant", plant_options, default=plant_options)
-        df = df[df[DF_PLNT].isin(selected_plant)]
+if st.button("🔄 Reset Filter"):
+    st.experimental_rerun()
 
-# Simpan hasil filter
-df_f = df.copy()
+mask = (df[DF_DATE].dt.date >= start_date) & (df[DF_DATE].dt.date <= end_date)
+if DF_AREA and sel_area != "All":
+    mask &= df[DF_AREA].astype(str) == str(sel_area)
+if DF_PLNT and sel_plant != "All":
+    mask &= df[DF_PLNT].astype(str) == str(sel_plant)
 
-# =========================
-# SUMMARY SECTION
-# =========================
-st.subheader("📊 Ringkasan Data")
+df_f = df.loc[mask].copy()
+day_span = max((end_date - start_date).days + 1, 1)
 
-tot_area  = df_f[DF_AREA].nunique() if DF_AREA and DF_AREA in df_f.columns else 0
-tot_sales = df_f[DF_SLS].nunique() if DF_SLS and DF_SLS in df_f.columns else 0
-tot_plant = df_f[DF_PLNT].nunique() if DF_PLNT and DF_PLNT in df_f.columns else 0
-tot_trip  = df_f[DF_TRIP].nunique() if DF_TRIP and DF_TRIP in df_f.columns else 0
-tot_qty   = df_f[DF_QTY].sum() if DF_QTY and DF_QTY in df_f.columns else 0
+# ========== SUMMARIZE (KPI CARDS) ==========
+st.markdown("<div class='section-title'>🧭 Summarize</div>", unsafe_allow_html=True)
+kpi_cols = st.columns(7)
+fmt0 = lambda x: f"{int(x):,}" if pd.notna(x) else "0"
+fmtN0 = lambda x: f"{x:,.0f}" if pd.notna(x) else "0"
 
-col1, col2, col3, col4, col5 = st.columns(5)
-col1.metric("🌍 Area", tot_area)
-col2.metric("👨‍💼 Sales Man", tot_sales)
-col3.metric("🏭 Plant", tot_plant)
-col4.metric("🚚 Trip (DP No)", tot_trip)
-col5.metric("📦 Total Qty", f"{tot_qty:,.0f}")
+tot_area  = df_f[DF_AREA].nunique() if DF_AREA else 0
+tot_plant = df_f[DF_PLNT].nunique() if DF_PLNT else 0
+tot_vol   = float(df_f[DF_QTY].sum())
+tot_truck = df_f[DF_TRCK].nunique() if (DF_TRCK and DF_TRCK in df_f.columns) else 0
+tot_trip  = df_f[DF_TRIP].nunique() if DF_TRIP in df_f.columns else 0
+avg_vol_day = (tot_vol / day_span) if day_span > 0 else 0
+avg_load_trip = (tot_vol / tot_trip) if tot_trip > 0 else 0
+
+kpis = [
+    ("🌍 Total Area", fmt0(tot_area)),
+    ("🏭 Total Plant", fmt0(tot_plant)),
+    ("📦 Total Volume", fmtN0(tot_vol)),
+    ("📅 Avg Vol/Day", fmtN0(avg_vol_day)),
+    ("🚛 Total Truck", fmt0(tot_truck)),
+    ("🧾 Total Trip", fmt0(tot_trip)),
+    ("⚖️ Avg Load/Trip", fmtN0(avg_load_trip)),
 ]
 
 for col, (label, value) in zip(kpi_cols, kpis):

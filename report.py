@@ -245,17 +245,7 @@ pick = st.radio("", ["Logistic", "Sales & End Customer"], horizontal=True)
 # ----------------------------------------------------
 if pick == "Logistic":
     st.markdown("<div class='section-title'>📦 Logistic</div>", unsafe_allow_html=True)
-
-    # Chart: Total Volume / Day
-    vol_day = (
-        df_f.groupby(DF_DATE, as_index=False)[DF_QTY]
-        .sum()
-        .rename(columns={DF_QTY: "Total Volume"})
-    )
-    fig1 = bar_desc(vol_day, DF_DATE, "Total Volume", "Total Volume / Day", accent, accent_light, chart_template)
-    if fig1:
-        st.plotly_chart(fig1, use_container_width=True)
-
+    
     # Chart: Pie per Area (persentase)
     if DF_AREA:
         vol_area = (
@@ -275,7 +265,18 @@ if pick == "Logistic":
         )
         st.plotly_chart(fig2, use_container_width=True)
 
-    # Chart Volume per Plant (Actual vs Target)
+
+    # Chart: Total Volume / Day
+    vol_day = (
+        df_f.groupby(DF_DATE, as_index=False)[DF_QTY]
+        .sum()
+        .rename(columns={DF_QTY: "Total Volume"})
+    )
+    fig1 = bar_desc(vol_day, DF_DATE, "Total Volume", "Total Volume / Day", accent, accent_light, chart_template)
+    if fig1:
+        st.plotly_chart(fig1, use_container_width=True)
+
+        # Chart Volume per Plant (Actual vs Target)
     if DF_PLNT:
         vol_plant = (
             df_f.groupby(DF_PLNT, as_index=False)[DF_QTY]

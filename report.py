@@ -217,24 +217,6 @@ df = df.dropna(subset=[col_dp_date])
 df[col_qty] = pd.to_numeric(df[col_qty], errors="coerce").fillna(0)
 
 # =========================
-# Filter Tanggal (pakai mapping col_dp_date)
-# =========================
-with st.expander("📅 Filter Tanggal", expanded=True):
-    min_date = df[col_dp_date].min()
-    max_date = df[col_dp_date].max()
-
-    start_date = st.date_input("Start Date", min_date, min_value=min_date, max_value=max_date)
-    end_date   = st.date_input("End Date", max_date, min_value=min_date, max_value=max_date)
-
-    # Filter dataframe
-    df_filtered = df[
-        (df[col_dp_date] >= pd.to_datetime(start_date)) & 
-        (df[col_dp_date] <= pd.to_datetime(end_date))
-    ]
- 
-
-
-# =========================
 # Preprocessing Data
 # =========================
 df[col_dp_date] = pd.to_datetime(df[col_dp_date], errors="coerce")
@@ -253,46 +235,37 @@ DF_TRCK = col_truck
 DF_ENDC = col_endcust
 
 # =========================
-# Filter Section (Card di atas dashboard)
+# Filter Section (Expander)
 # =========================
-st.markdown("""
-    <div style="padding:15px; background-color:#f9f9f9; border-radius:12px; 
-                border:1px solid #ddd; margin-bottom:20px;">
-        <h4 style="margin:0; padding:0; display:flex; align-items:center; color:#0E1117;">
-            🔍 &nbsp; Filter Data
-        </h4>
-    </div>
-""", unsafe_allow_html=True)
+with st.expander("🔍 Filter Data", expanded=True):
+    # --- Date Filter ---
+    col1, col2 = st.columns(2)
+    with col1:
+        start_date = st.date_input("Start Date", df[col_dp_date].min())
+    with col2:
+        end_date = st.date_input("End Date", df[col_dp_date].max())
 
-# --- Date Filter ---
-col1, col2 = st.columns(2)
-with col1:
-    start_date = st.date_input("Start Date", df[col_dp_date].min())
-with col2:
-    end_date = st.date_input("End Date", df[col_dp_date].max())
+    # --- Area & Plant Filter ---
+    col3, col4 = st.columns(2)
+    with col3:
+        area_options = ["All"]
+        if col_area and col_area in df.columns:
+            area_options += sorted(df[col_area].dropna().unique().tolist())
+        area = st.selectbox("Area", area_options)
 
-# --- Area & Plant Filter ---
-col3, col4 = st.columns(2)
+    with col4:
+        plant_options = ["All"]
+        if col_plant and col_plant in df.columns:
+            plant_options += sorted(df[col_plant].dropna().unique().tolist())
+        plant = st.selectbox("Plant Name", plant_options)
 
-with col3:
-    area_options = ["All"]
-    if col_area and col_area in df.columns:
-        area_options += sorted(df[col_area].dropna().unique().tolist())
-    area = st.selectbox("Area", area_options)
-
-with col4:
-    plant_options = ["All"]
-    if col_plant and col_plant in df.columns:
-        plant_options += sorted(df[col_plant].dropna().unique().tolist())
-    plant = st.selectbox("Plant Name", plant_options)
-
-# --- Reset Filter Button ---
-reset = st.button("🔄 Reset Filter")
-if reset:
-    start_date = df[col_dp_date].min()
-    end_date   = df[col_dp_date].max()
-    area = "All"
-    plant = "All"
+    # --- Reset Filter Button ---
+    reset = st.button("🔄 Reset Filter")
+    if reset:
+        start_date = df[col_dp_date].min()
+        end_date   = df[col_dp_date].max()
+        area = "All"
+        plant = "All"
 
 
 # ========== SUMMARIZE (KPI CARDS) ==========

@@ -141,6 +141,10 @@ def line_chart(df, x, y, title):
 
 
 # ========== UPLOAD DATA ==========
+with st.expander("📂 Upload File Data", expanded=False):  
+    actual_file = st.file_uploader("Upload File Actual (Excel)", type=["xlsx", "xls"])
+    target_file = st.file_uploader("Upload File Target (Excel)", type=["xlsx", "xls"])
+    
 uploaded = st.file_uploader("📂 Upload File Excel Delivery (2MB–50MB)", type=["xlsx", "xls"], key="actual")
 target_uploaded = st.file_uploader("📁 Upload File Target Volume (Plant/Area, optional)", type=["xlsx", "xls"], key="target")
 

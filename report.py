@@ -145,7 +145,7 @@ with st.expander("📂 Upload File Data", expanded=False):
     actual_file = st.file_uploader("Upload File Actual (Excel)", type=["xlsx", "xls"])
     target_file = st.file_uploader("Upload File Target (Excel)", type=["xlsx", "xls"])
     
-if uploaded is None:
+if File Actual is None:
     st.info("Silakan upload file Excel delivery terlebih dahulu (ukuran 2MB–50MB).")
     st.stop()
 

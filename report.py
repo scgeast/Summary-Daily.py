@@ -15,7 +15,7 @@ with st.expander("📂 Upload File Data", expanded=False):
     target_file = st.file_uploader("Upload File Target (Excel)", type=["xlsx", "xls"])
 
 # =========================
-# Load Data
+# Load Data + Normalisasi Kolom
 # =========================
 df_actual, df_target = None, None
 if actual_file is not None:
@@ -31,26 +31,47 @@ if df is None:
     st.warning("⚠️ Silakan upload minimal satu file (Actual / Target).")
     st.stop()
 
+# ---- Normalisasi Nama Kolom ----
+df.columns = (
+    df.columns.str.strip()        # hapus spasi depan/belakang
+    .str.lower()                  # huruf kecil semua
+    .str.replace(" ", "_")        # spasi jadi underscore
+    .str.replace("-", "_")        # tanda - jadi underscore
+)
+
+# Alias mapping supaya tetap konsisten
+col_map = {
+    "qty": "qty",
+    "salesman": "salesman",
+    "sales_man": "salesman",
+    "plant": "plant_name",
+    "plant_name": "plant_name",
+    "area": "area",
+    "dp_no": "dp_no",
+    "dp_number": "dp_no",
+    "dp_date": "dp_date",
+    "tanggal": "dp_date"
+}
+df = df.rename(columns=lambda x: col_map.get(x, x))
+
 # =========================
 # Filter Section
 # =========================
 with st.expander("🎛️ Filter Data", expanded=True):
-    st.write("Pilih filter untuk menyesuaikan dashboard:")
-
-    if "Tanggal" in df.columns:
-        tanggal = st.multiselect("Pilih Tanggal", options=df["Tanggal"].unique())
+    if "dp_date" in df.columns:
+        tanggal = st.multiselect("Pilih Tanggal", options=df["dp_date"].unique())
         if tanggal:
-            df = df[df["Tanggal"].isin(tanggal)]
+            df = df[df["dp_date"].isin(tanggal)]
 
-    if "Area" in df.columns:
-        area = st.multiselect("Pilih Area", options=df["Area"].unique())
+    if "area" in df.columns:
+        area = st.multiselect("Pilih Area", options=df["area"].unique())
         if area:
-            df = df[df["Area"].isin(area)]
+            df = df[df["area"].isin(area)]
 
-    if "Plant" in df.columns:
-        plant = st.multiselect("Pilih Plant", options=df["Plant"].unique())
+    if "plant_name" in df.columns:
+        plant = st.multiselect("Pilih Plant", options=df["plant_name"].unique())
         if plant:
-            df = df[df["Plant"].isin(plant)]
+            df = df[df["plant_name"].isin(plant)]
 
 df_filtered = df.copy()
 
@@ -61,70 +82,52 @@ with st.expander("📊 Summary KPI", expanded=True):
     c1, c2, c3, c4 = st.columns(4)
 
     with c1:
-        if "Qty" in df_filtered.columns:
-            st.metric("Total Volume", f"{df_filtered['Qty'].sum():,.0f}")
+        if "qty" in df_filtered.columns:
+            st.metric("Total Volume", f"{df_filtered['qty'].sum():,.0f}")
         else:
             st.metric("Total Volume", "N/A")
 
     with c2:
-        if "Ritase" in df_filtered.columns:
-            st.metric("Total Ritase", f"{df_filtered['Ritase'].sum():,.0f}")
+        if "dp_no" in df_filtered.columns:
+            st.metric("Total Ritase (DP No)", f"{df_filtered['dp_no'].nunique():,.0f}")
         else:
             st.metric("Total Ritase", "N/A")
 
     with c3:
-        if "Truck" in df_filtered.columns:
-            st.metric("Jumlah Truck", f"{df_filtered['Truck'].nunique():,.0f}")
+        if "plant_name" in df_filtered.columns:
+            st.metric("Jumlah Plant", f"{df_filtered['plant_name'].nunique():,.0f}")
         else:
-            st.metric("Jumlah Truck", "N/A")
+            st.metric("Jumlah Plant", "N/A")
 
     with c4:
-        if "Salesman" in df_filtered.columns:
-            st.metric("Jumlah Salesman", f"{df_filtered['Salesman'].nunique():,.0f}")
+        if "salesman" in df_filtered.columns:
+            st.metric("Jumlah Salesman", f"{df_filtered['salesman'].nunique():,.0f}")
         else:
             st.metric("Jumlah Salesman", "N/A")
 
 # =========================
-# Chart Section (with fallback)
+# Chart Section
 # =========================
 if not df_filtered.empty:
 
     with st.expander("📈 Delivery Performance", expanded=True):
-        if "Salesman" in df_filtered.columns and "Qty" in df_filtered.columns:
-            fig1 = px.bar(df_filtered, x="Salesman", y="Qty", title="Delivery by Salesman", color="Salesman")
-            st.plotly_chart(fig1, use_container_width=True)
-        else:
-            st.info("Kolom 'Salesman' dan 'Qty' tidak ditemukan. Menampilkan contoh chart.")
-            dummy = df_filtered.head(10).reset_index()
-            fig1 = px.bar(dummy, x=dummy.index, y=dummy[dummy.columns[0]], title="Dummy Chart - Delivery")
+        if "salesman" in df_filtered.columns and "qty" in df_filtered.columns:
+            fig1 = px.bar(df_filtered, x="salesman", y="qty", title="Delivery by Salesman", color="salesman")
             st.plotly_chart(fig1, use_container_width=True)
 
     with st.expander("🚚 Truck Utilization", expanded=False):
-        if "Truck" in df_filtered.columns and "Utilization" in df_filtered.columns:
-            fig2 = px.pie(df_filtered, names="Truck", values="Utilization", title="Truck Utilization")
-            st.plotly_chart(fig2, use_container_width=True)
-        else:
-            st.info("Kolom 'Truck' dan 'Utilization' tidak ditemukan. Menampilkan contoh chart.")
-            dummy = df_filtered.head(10).reset_index()
-            fig2 = px.pie(dummy, names=dummy.index, values=dummy[dummy.columns[0]], title="Dummy Chart - Utilization")
+        if "dp_no" in df_filtered.columns:
+            truck_util = df_filtered.groupby("dp_no").size().reset_index(name="count")
+            fig2 = px.bar(truck_util, x="dp_no", y="count", title="Truck Utilization (by DP No)")
             st.plotly_chart(fig2, use_container_width=True)
 
     with st.expander("📦 Sales & Customer Performance", expanded=False):
-        if "Customer" in df_filtered.columns and "Qty" in df_filtered.columns and "Salesman" in df_filtered.columns:
-            fig3 = px.bar(df_filtered, x="Customer", y="Qty", color="Salesman", barmode="group", title="Sales Volume per Customer")
-            st.plotly_chart(fig3, use_container_width=True)
-        else:
-            st.info("Kolom 'Customer', 'Qty', 'Salesman' tidak lengkap. Menampilkan contoh chart.")
-            dummy = df_filtered.head(10).reset_index()
-            fig3 = px.bar(dummy, x=dummy.index, y=dummy[dummy.columns[0]], title="Dummy Chart - Sales & Customer")
+        if "area" in df_filtered.columns and "qty" in df_filtered.columns:
+            fig3 = px.bar(df_filtered, x="area", y="qty", color="salesman", barmode="group", title="Sales Volume per Area")
             st.plotly_chart(fig3, use_container_width=True)
 
     with st.expander("📉 Trend Analysis", expanded=False):
-        if "Tanggal" in df_filtered.columns and "Ritase" in df_filtered.columns:
-            fig4 = px.line(df_filtered, x="Tanggal", y="Ritase", title="Trend Ritase")
-            st.plotly_chart(fig4, use_container_width=True)
-        else:
-            st.info("Kolom 'Tanggal' dan 'Ritase' tidak ditemukan. Menampilkan contoh chart.")
-            dummy = df_filtered.reset_index()
-            fig4 = px.line(dummy, x=dummy.index, y=dummy[dummy.columns[0]], title="Dummy Chart - Trend")
+        if "dp_date" in df_filtered.columns and "qty" in df_filtered.columns:
+            trend = df_filtered.groupby("dp_date")["qty"].sum().reset_index()
+            fig4 = px.line(trend, x="dp_date", y="qty", title="Trend Volume")
             st.plotly_chart(fig4, use_container_width=True)

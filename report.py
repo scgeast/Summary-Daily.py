@@ -542,3 +542,55 @@ elif pick == "Sales & End Customer":
             st.info("Data filtered kosong, tidak ada end customer untuk ditampilkan.")
     else:
         st.warning("Kolom End Customer atau Qty tidak ditemukan.")
+        
+        # --- Mapping kolom fallback
+if DF_SLS not in df_filtered.columns:
+    possible_sales = [c for c in df_filtered.columns if "sales" in c.lower()]
+    DF_SLS = possible_sales[0] if possible_sales else None
+
+if DF_ENDC not in df_filtered.columns:
+    possible_cust = [c for c in df_filtered.columns if "customer" in c.lower()]
+    DF_ENDC = possible_cust[0] if possible_cust else None
+
+st.write("Kolom sales digunakan:", DF_SLS)
+st.write("Kolom end customer digunakan:", DF_ENDC)
+st.write("Jumlah data filtered:", len(df_filtered))
+
+# --- Volume per Salesman ---
+if DF_SLS and DF_QTY in df_filtered.columns and not df_filtered.empty:
+    vol_sales = df_filtered.groupby(DF_SLS, as_index=False)[DF_QTY].sum().rename(columns={DF_QTY: "Volume"})
+    vol_sales = vol_sales.sort_values("Volume", ascending=False)
+    fig_sales = px.bar(
+        vol_sales,
+        x=DF_SLS,
+        y="Volume",
+        template=chart_template,
+        text_auto=False,
+        color=DF_SLS,
+        color_discrete_sequence=futur_colors
+    )
+    fig_sales.update_traces(texttemplate="%{y:.2f}", textposition="outside")
+    fig_sales.update_layout(showlegend=False, yaxis_title="Volume")
+    st.plotly_chart(fig_sales, use_container_width=True)
+else:
+    st.info("Data Sales kosong atau kolom tidak ditemukan.")
+
+# --- Volume per End Customer ---
+if DF_ENDC and DF_QTY in df_filtered.columns and not df_filtered.empty:
+    vol_endcust = df_filtered.groupby(DF_ENDC, as_index=False)[DF_QTY].sum().rename(columns={DF_QTY: "Volume"})
+    vol_endcust = vol_endcust.sort_values("Volume", ascending=False)
+    fig_endcust = px.bar(
+        vol_endcust.head(15),
+        x=DF_ENDC,
+        y="Volume",
+        template=chart_template,
+        text_auto=False,
+        color=DF_ENDC,
+        color_discrete_sequence=futur_colors
+    )
+    fig_endcust.update_traces(texttemplate="%{y:.2f}", textposition="outside")
+    fig_endcust.update_layout(showlegend=False, yaxis_title="Volume")
+    st.plotly_chart(fig_endcust, use_container_width=True)
+else:
+    st.info("Data End Customer kosong atau kolom tidak ditemukan.")
+

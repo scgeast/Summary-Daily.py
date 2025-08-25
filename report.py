@@ -388,7 +388,7 @@ if DF_AREA and DF_AREA in df_filtered.columns and DF_QTY in df_filtered.columns:
         )
         st.plotly_chart(fig_truck, use_container_width=True)
 
-    # --- Average Load / Trip per Truck ---
+   # --- Average Load / Trip per Truck (Tanpa Legend) ---
 if DF_TRCK and DF_TRIP and DF_QTY and DF_TRCK in df_filtered.columns and DF_TRIP in df_filtered.columns:
     # Total volume per truck
     truck_volume = (
@@ -397,7 +397,7 @@ if DF_TRCK and DF_TRIP and DF_QTY and DF_TRCK in df_filtered.columns and DF_TRIP
         .rename(columns={DF_QTY: "Total Volume"})
     )
 
-    # Total trip per truck (sudah dihitung di truck_util)
+    # Total trip per truck
     truck_util = (
         df_filtered.groupby(DF_TRCK, as_index=False)[DF_TRIP]
         .nunique()
@@ -413,7 +413,7 @@ if DF_TRCK and DF_TRIP and DF_QTY and DF_TRCK in df_filtered.columns and DF_TRIP
     # Sort descending
     truck_stats = truck_stats.sort_values("Avg Load / Trip", ascending=False)
 
-    # Buat bar chart
+    # Buat bar chart tanpa legend
     fig_avg_load = px.bar(
         truck_stats, x=DF_TRCK, y="Avg Load / Trip",
         template=chart_template,
@@ -422,15 +422,7 @@ if DF_TRCK and DF_TRIP and DF_QTY and DF_TRCK in df_filtered.columns and DF_TRIP
         color=DF_TRCK,
         color_discrete_sequence=futur_colors
     )
-    fig_avg_load.update_layout(
-        legend=dict(
-            orientation="h",
-            y=-0.2,
-            x=0,
-            xanchor="left"
-        ),
-        yaxis_title="Avg Load / Trip"
-    )
+    fig_avg_load.update_layout(showlegend=False, yaxis_title="Avg Load / Trip")
     st.plotly_chart(fig_avg_load, use_container_width=True)
 
     # --- Distance Analysis ---

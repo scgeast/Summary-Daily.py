@@ -435,6 +435,7 @@ if DF_TRCK and DF_TRIP and DF_QTY and DF_TRCK in df_filtered.columns and DF_TRIP
             )
             fig_dist = px.bar(
                 dist_area, x=DF_AREA, y="Avg Distance", template=chart_template,
+                texttemplate="%{y:.2f}",  # 2 angka desimal
                 title="Average Distance per Area", text_auto=True
             )
             st.plotly_chart(fig_dist, use_container_width=True)
@@ -463,7 +464,7 @@ if DF_PLNT and DF_DIST and DF_PLNT in df_filtered.columns and DF_DIST in df_filt
     # Atur label angka 2 digit desimal
     fig_dist_plant.update_traces(
         texttemplate="%{y:.2f}",  # 2 angka desimal
-        textposition="outside"
+        textposition="inside"
     )
 
     # Hilangkan legend supaya chart lebih bersih

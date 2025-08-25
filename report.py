@@ -242,13 +242,7 @@ with st.expander("🔎 Filter Data", expanded=True):
             start_date, end_date = date_range
             df = df[(df[DF_DATE] >= pd.to_datetime(start_date)) & (df[DF_DATE] <= pd.to_datetime(end_date))]
 
-    # Filter Sales
-    if DF_SLS in df.columns:
-        sales_options = df[DF_SLS].dropna().unique().tolist()
-        selected_sales = st.multiselect("Pilih Sales Man", sales_options, default=sales_options)
-        df = df[df[DF_SLS].isin(selected_sales)]
-
-    # Filter Area
+       # Filter Area
     if DF_AREA and DF_AREA in df.columns:
         area_options = df[DF_AREA].dropna().unique().tolist()
         selected_area = st.multiselect("Pilih Area", area_options, default=area_options)

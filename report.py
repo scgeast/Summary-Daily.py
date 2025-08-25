@@ -482,3 +482,19 @@ if pick == "Sales & End Customer":
             st.plotly_chart(figB, use_container_width=True)
     else:
         st.info("Kolom End Customer Name tidak ditemukan di file.")
+
+    # End Customer (Top 25)
+if DF_ENDC:
+    st.markdown("<div class='subtitle'>👥 End Customer (Top 25)</div>", unsafe_allow_html=True)
+    endc = (
+        df_f.groupby(DF_ENDC, as_index=False)[DF_QTY]
+        .sum()
+        .rename(columns={DF_QTY: "Total Volume"})
+        .sort_values("Total Volume", ascending=False)
+        .head(25)  # Ambil 25 teratas
+    )
+    figB = bar_desc(endc, DF_ENDC, "Total Volume", "Top 25 End Customers by Total Volume", accent, accent_light, chart_template)
+    if figB:
+        st.plotly_chart(figB, use_container_width=True)
+else:
+    st.info("Kolom End Customer Name tidak ditemukan di file.")

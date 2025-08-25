@@ -145,9 +145,16 @@ with st.expander("📂 Upload File Data", expanded=False):
     actual_file = st.file_uploader("Upload File Actual (Excel)", type=["xlsx", "xls"])
     target_file = st.file_uploader("Upload File Target (Excel)", type=["xlsx", "xls"])
     
-if uploaded is None:
-    st.info("Silakan upload file Excel delivery terlebih dahulu (ukuran 2MB–50MB).")
-    st.stop()
+if actual_file is None:
+    st.warning("⚠️ Silakan upload file Actual terlebih dahulu.")
+else:
+    df_actual = pd.read_excel(actual_file)
+
+if target_file is None:
+    st.info("📂 File Target tidak diupload, dashboard hanya pakai data Actual.")
+else:
+    df_target = pd.read_excel(target_file)
+
 
 size_mb = uploaded.size / (1024 * 1024)
 if size_mb < 2 or size_mb > 50:

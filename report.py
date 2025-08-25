@@ -172,4 +172,12 @@ if col_truck in df_filtered.columns and col_dp_no in df_filtered.columns and col
 
 # 5. Avg Distance per Area
 if col_distance in df_filtered.columns and col_area in df_filtered.columns:
-    dist_area = df_filtered.groupby(col_area, as_index=False)[col_distance].mean().rename(columns={col_distance:"Avg
+    dist_area = (
+        df_filtered.groupby(col_area, as_index=False)[col_distance]
+        .mean()
+        .rename(columns={col_distance:"Avg Distance"})
+    )
+    fig = px.bar(dist_area, x=col_area, y="Avg Distance", template=chart_template,
+                 title="Average Distance per Area", text_auto=True)
+    st.plotly_chart(fig, use_container_width=True)
+

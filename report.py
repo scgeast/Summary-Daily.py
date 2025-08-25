@@ -266,6 +266,33 @@ with st.expander("🔍 Filter Data", expanded=True):
         end_date   = df[col_dp_date].max()
         area = "All"
         plant = "All"
+        
+# =========================
+# Build Filtered DataFrame (WAJIB sebelum KPI & Chart)
+# =========================
+if DF_DATE not in df.columns:
+    st.error("Kolom tanggal utama tidak ditemukan setelah mapping.")
+    st.stop()
+
+# Mask tanggal
+mask = (df[DF_DATE].dt.date >= start_date) & (df[DF_DATE].dt.date <= end_date)
+
+# Mask area
+if DF_AREA and DF_AREA in df.columns and area != "All":
+    mask &= df[DF_AREA].astype(str) == str(area)
+
+# Mask plant
+if DF_PLNT and DF_PLNT in df.columns and plant != "All":
+    mask &= df[DF_PLNT].astype(str) == str(plant)
+
+df_filtered = df.loc[mask].copy()
+
+# Span hari (inklusif)
+day_span = max((end_date - start_date).days + 1, 1)
+
+# Kalau kosong kasih info
+if df_filtered.empty:
+    st.info("Tidak ada data sesuai filter yang dipilih.")
 
 
 # =========================

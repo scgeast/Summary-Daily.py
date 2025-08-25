@@ -3,3 +3,5 @@ pandas
 plotly
 xlsxwriter
 openpyxl
+numpy
+statsmodels

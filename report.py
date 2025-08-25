@@ -342,7 +342,7 @@ if pick == "Logistic":
             .sum()
             .rename(columns={DF_QTY: "Actual"})
         )
-        if File Actual_uploaded is not None:
+        if File_Actual_uploaded is not None:
             df_target = pd.read_excel(target_uploaded)
             df_target.columns = df_target.columns.str.strip().str.lower()
             plant_col = [c for c in df_target.columns if "plant" in c][0]

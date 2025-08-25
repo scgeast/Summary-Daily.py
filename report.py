@@ -228,46 +228,37 @@ DF_DIST = col_distance
 DF_TRCK = col_truck
 DF_ENDC = col_endcust
 
-# ========== FILTER DATA (DIPINDAH KE ATAS) ==========
-with st.expander("🔎 Filter Data", expanded=True): 
-st.markdown("<div class='section-title'>🔍 Filter Data</div>", unsafe_allow_html=True)
-min_d = df[DF_DATE].min().date()
-max_d = df[DF_DATE].max().date()
-start_date, end_date = st.columns(2)
-with start_date:
-    start_date = st.date_input("Start Date", min_d)
-with end_date:
-    end_date   = st.date_input("End Date", max_d)
+# =========================
+# Filter Section (Main Area)
+# =========================
+with st.expander("🔎 Filter Data", expanded=True):  
+    
+    # Filter Tanggal
+    if DF_DATE in df.columns:
+        min_date = df[DF_DATE].min()
+        max_date = df[DF_DATE].max()
+        date_range = st.date_input("Pilih Rentang Tanggal", [min_date, max_date])
+        if isinstance(date_range, list) and len(date_range) == 2:
+            start_date, end_date = date_range
+            df = df[(df[DF_DATE] >= pd.to_datetime(start_date)) & (df[DF_DATE] <= pd.to_datetime(end_date))]
 
-if DF_AREA:
-    areas = ["All"] + sorted(df[DF_AREA].dropna().astype(str).unique().tolist())
-    sel_area = st.selectbox("Area", areas)
-else:
-    sel_area = "All"
+    # Filter Sales
+    if DF_SLS in df.columns:
+        sales_options = df[DF_SLS].dropna().unique().tolist()
+        selected_sales = st.multiselect("Pilih Sales Man", sales_options, default=sales_options)
+        df = df[df[DF_SLS].isin(selected_sales)]
 
-if DF_PLNT:
-    if DF_AREA and sel_area != "All":
-        plants = ["All"] + sorted(
-            df[df[DF_AREA].astype(str) == str(sel_area)][DF_PLNT]
-            .dropna().astype(str).unique().tolist()
-        )
-    else:
-        plants = ["All"] + sorted(df[DF_PLNT].dropna().astype(str).unique().tolist())
-    sel_plant = st.selectbox("Plant Name", plants)
-else:
-    sel_plant = "All"
+    # Filter Area
+    if DF_AREA and DF_AREA in df.columns:
+        area_options = df[DF_AREA].dropna().unique().tolist()
+        selected_area = st.multiselect("Pilih Area", area_options, default=area_options)
+        df = df[df[DF_AREA].isin(selected_area)]
 
-if st.button("🔄 Reset Filter"):
-    st.experimental_rerun()
-
-mask = (df[DF_DATE].dt.date >= start_date) & (df[DF_DATE].dt.date <= end_date)
-if DF_AREA and sel_area != "All":
-    mask &= df[DF_AREA].astype(str) == str(sel_area)
-if DF_PLNT and sel_plant != "All":
-    mask &= df[DF_PLNT].astype(str) == str(sel_plant)
-
-df_f = df.loc[mask].copy()
-day_span = max((end_date - start_date).days + 1, 1)
+    # Filter Plant
+    if DF_PLNT and DF_PLNT in df.columns:
+        plant_options = df[DF_PLNT].dropna().unique().tolist()
+        selected_plant = st.multiselect("Pilih Plant", plant_options, default=plant_options)
+        df = df[df[DF_PLNT].isin(selected_plant)]
 
 # ========== SUMMARIZE (KPI CARDS) ==========
 st.markdown("<div class='section-title'>🧭 Summarize</div>", unsafe_allow_html=True)

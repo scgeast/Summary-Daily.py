@@ -140,35 +140,34 @@ def line_chart(df, x, y, title):
     return fig
 
 
-# ========== UPLOAD DATA ==========
-with st.expander("📂 Upload File Data", expanded=False):  
-    actual_file = st.file_uploader("Upload File Actual (Excel)", type=["xlsx", "xls"])
-    target_file = st.file_uploader("Upload File Target (Excel)", type=["xlsx", "xls"])
-    
-if actual_file is None:
-    st.warning("⚠️ Silakan upload file Actual terlebih dahulu.")
-else:
-    df_actual = pd.read_excel(actual_file)
+# =========================
+# File Upload Section (Sidebar + Expand/Collapse)
+# =========================
+with st.sidebar:
+    with st.expander("📂 Upload Data Files", expanded=False):  
+        actual_file = st.file_uploader("Upload File Actual", type=["xlsx", "xls"], key="actual")
+        target_file = st.file_uploader("Upload File Target", type=["xlsx", "xls"], key="target")
 
-if target_file is None:
-    st.info("📂 File Target tidak diupload, dashboard hanya pakai data Actual.")
-else:
-    df_target = pd.read_excel(target_file)
+# =========================
+# Load Data
+# =========================
+df_actual, df_target = None, None
 
 if actual_file is not None:
-    size_mb = actual_file.size / (1024 * 1024)
-    st.caption(f"📄 File Actual: {actual_file.name} ({size_mb:.2f} MB)")
+    try:
+        df_actual = pd.read_excel(actual_file)
+        size_mb = actual_file.size / (1024 * 1024)
+        st.sidebar.caption(f"📄 File Actual: {actual_file.name} ({size_mb:.2f} MB)")
+    except Exception as e:
+        st.error(f"Gagal membaca file Actual: {e}")
+
 if target_file is not None:
-    size_mb = target_file.size / (1024 * 1024)
-    st.caption(f"🎯 File Target: {target_file.name} ({size_mb:.2f} MB)")
-
-
-try:
-    xls = pd.ExcelFile(uploaded)
-    df_raw = xls.parse(0)
-except Exception as e:
-    st.error(f"Gagal membaca file: {e}")
-    st.stop()
+    try:
+        df_target = pd.read_excel(target_file)
+        size_mb = target_file.size / (1024 * 1024)
+        st.sidebar.caption(f"🎯 File Target: {target_file.name} ({size_mb:.2f} MB)")
+    except Exception as e:
+        st.error(f"Gagal membaca file Target: {e}")
 
 df = normalize_columns(df_raw)
 

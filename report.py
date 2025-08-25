@@ -264,23 +264,36 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
+# --- Date Filter ---
 col1, col2 = st.columns(2)
 with col1:
     start_date = st.date_input("Start Date", df[col_dp_date].min())
 with col2:
     end_date = st.date_input("End Date", df[col_dp_date].max())
-col3, col4 = st.columns(2)
-with col3:
-    area = st.selectbox("Area", ["All"] + sorted(df["Area"].dropna().unique().tolist()))
-with col4:
-    plant = st.selectbox("Plant Name", ["All"] + sorted(df["Plant Name"].dropna().unique().tolist()))
 
+# --- Area & Plant Filter ---
+col3, col4 = st.columns(2)
+
+with col3:
+    area_options = ["All"]
+    if col_area and col_area in df.columns:
+        area_options += sorted(df[col_area].dropna().unique().tolist())
+    area = st.selectbox("Area", area_options)
+
+with col4:
+    plant_options = ["All"]
+    if col_plant and col_plant in df.columns:
+        plant_options += sorted(df[col_plant].dropna().unique().tolist())
+    plant = st.selectbox("Plant Name", plant_options)
+
+# --- Reset Filter Button ---
 reset = st.button("🔄 Reset Filter")
 if reset:
-    start_date = df["Tanggal Pengiriman"].min()
-    end_date = df["Tanggal Pengiriman"].max()
+    start_date = df[col_dp_date].min()
+    end_date   = df[col_dp_date].max()
     area = "All"
     plant = "All"
+
 
 # ========== SUMMARIZE (KPI CARDS) ==========
 st.markdown("<div class='section-title'>🧭 Summarize</div>", unsafe_allow_html=True)

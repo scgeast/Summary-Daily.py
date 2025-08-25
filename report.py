@@ -218,7 +218,7 @@ kpis = [
     ("📅 Avg Vol/Day", fmtN0(avg_vol_day)),
     ("🚛 Total Truck", fmt0(tot_truck)),
     ("🧾 Total Trip", fmt0(tot_trip)),
-    ("⚖️ Avg Load/Trip<br><span style='font-size:11px'>(Total Volume : Total Trip)</span>", fmtN0(avg_load_trip)),
+    ("⚖️ Avg Load/Trip", fmtN0(avg_load_trip)),
 ]
 
 for col, (label, value) in zip(kpi_cols, kpis):

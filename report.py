@@ -144,25 +144,30 @@ def line_chart(df, x, y, title):
 with st.expander("📂 Upload File Data", expanded=False):  
     actual_file = st.file_uploader("Upload File Actual (Excel)", type=["xlsx", "xls"])
     target_file = st.file_uploader("Upload File Target (Excel)", type=["xlsx", "xls"])
-    
-if uploaded is None:
+
+# Cek file actual
+if actual_file is None:
     st.info("Silakan upload file Excel delivery terlebih dahulu (ukuran 2MB–50MB).")
     st.stop()
 
-size_mb = uploaded.size / (1024 * 1024)
+# Cek ukuran file
+size_mb = actual_file.size / (1024 * 1024)
 if size_mb < 2 or size_mb > 50:
     st.error("⚠️ File harus berukuran antara 2MB - 50MB")
     st.stop()
 
+# Baca file actual
 try:
-    xls = pd.ExcelFile(uploaded)
+    xls = pd.ExcelFile(actual_file)
     df_raw = xls.parse(0)
 except Exception as e:
     st.error(f"Gagal membaca file: {e}")
     st.stop()
 
+# Normalisasi kolom
 df = normalize_columns(df_raw)
 
+# Deteksi kolom penting
 col_dp_date = match_col(df, ["dp date", "delivery date", "tanggal pengiriman", "dp_date", "tanggal_pengiriman"]) or "dp date"
 col_qty     = match_col(df, ["qty", "quantity", "volume"]) or "qty"
 col_sales   = match_col(df, ["sales man", "salesman", "sales name", "sales_name"]) or "sales man"
@@ -173,6 +178,7 @@ col_distance= match_col(df, ["distance", "jarak"]) or None
 col_truck   = match_col(df, ["truck no", "truck", "truck_no", "nopol", "vehicle"]) or None
 col_endcust = match_col(df, ["end customer name", "end customer", "customer", "end_customer"]) or None
 
+# Cek kolom wajib
 required_map = {
     col_dp_date: "Dp Date",
     col_qty:     "Qty",
@@ -185,10 +191,12 @@ if missing:
     st.error("Kolom wajib tidak ditemukan: " + ", ".join(label_missing))
     st.stop()
 
+# Konversi tipe data
 df[col_dp_date] = pd.to_datetime(df[col_dp_date], errors="coerce")
 df = df.dropna(subset=[col_dp_date])
 df[col_qty] = pd.to_numeric(df[col_qty], errors="coerce").fillna(0)
 
+# Assign kolom global
 DF_DATE = col_dp_date
 DF_QTY  = col_qty
 DF_SLS  = col_sales
@@ -198,6 +206,7 @@ DF_PLNT = col_plant
 DF_DIST = col_distance
 DF_TRCK = col_truck
 DF_ENDC = col_endcust
+
 
 # ========== FILTER DATA (DIPINDAH KE ATAS) ==========
 st.markdown("<div class='section-title'>🔍 Filter Data</div>", unsafe_allow_html=True)

@@ -435,7 +435,6 @@ if DF_TRCK and DF_TRIP and DF_QTY and DF_TRCK in df_filtered.columns and DF_TRIP
             )
             fig_dist = px.bar(
                 dist_area, x=DF_AREA, y="Avg Distance", template=chart_template,
-                texttemplate="%{y:.2f}",  # 2 angka desimal
                 title="Average Distance per Area", text_auto=True
             )
             st.plotly_chart(fig_dist, use_container_width=True)

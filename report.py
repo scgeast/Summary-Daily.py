@@ -313,7 +313,6 @@ if pick == "Logistic":
         )
         st.plotly_chart(fig2, use_container_width=True)
 
-
     # Chart: Total Volume / Day
     vol_day = (
         df_f.groupby(DF_DATE, as_index=False)[DF_QTY]
@@ -324,15 +323,15 @@ if pick == "Logistic":
     if fig1:
         st.plotly_chart(fig1, use_container_width=True)
 
-        # Chart Volume per Plant (Actual vs Target)
+    # Chart Volume per Plant (Actual vs Target)
     if DF_PLNT:
         vol_plant = (
             df_f.groupby(DF_PLNT, as_index=False)[DF_QTY]
             .sum()
             .rename(columns={DF_QTY: "Actual"})
         )
-        if target_uploaded is not None:
-            df_target = pd.read_excel(target_uploaded)
+        if target_file is not None:
+            df_target = pd.read_excel(target_file)
             df_target.columns = df_target.columns.str.strip().str.lower()
             plant_col = [c for c in df_target.columns if "plant" in c][0]
             target_col = [c for c in df_target.columns if "target" in c][0]
@@ -362,8 +361,8 @@ if pick == "Logistic":
             .sum()
             .rename(columns={DF_QTY: "Actual"})
         )
-        if target_uploaded is not None:
-            df_target = pd.read_excel(target_uploaded)
+        if target_file is not None:
+            df_target = pd.read_excel(target_file)
             df_target.columns = df_target.columns.str.strip().str.lower()
             area_col = [c for c in df_target.columns if "area" in c][0]
             target_col = [c for c in df_target.columns if "target" in c][0]

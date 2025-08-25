@@ -441,6 +441,30 @@ if DF_TRCK and DF_TRIP and DF_QTY and DF_TRCK in df_filtered.columns and DF_TRIP
     else:
         st.info("Kolom Distance tidak ditemukan di file.")
 
+# --- Average Distance per Plant ---
+if DF_PLNT and DF_DIST and DF_PLNT in df_filtered.columns and DF_DIST in df_filtered.columns:
+    dist_plant = (
+        df_filtered.groupby(DF_PLNT, as_index=False)[DF_DIST]
+        .mean()
+        .rename(columns={DF_DIST: "Avg Distance"})
+        .sort_values("Avg Distance", ascending=False)
+    )
+
+    fig_dist_plant = px.bar(
+        dist_plant,
+        x=DF_PLNT,
+        y="Avg Distance",
+        template=chart_template,
+        title="Average Distance per Plant",
+        text_auto=True,
+        color=DF_PLNT,
+        color_discrete_sequence=futur_colors
+    )
+
+    # Hilangkan legend supaya chart lebih bersih
+    fig_dist_plant.update_layout(showlegend=False, yaxis_title="Avg Distance")
+    st.plotly_chart(fig_dist_plant, use_container_width=True)
+
 
 # =========================
 # SALES PERFORMANCE

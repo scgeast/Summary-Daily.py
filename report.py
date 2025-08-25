@@ -169,8 +169,25 @@ if target_file is not None:
     except Exception as e:
         st.error(f"Gagal membaca file Target: {e}")
 
+# =========================
+# Tentukan DataFrame utama
+# =========================
+df_raw = None
+if df_actual is not None:
+    df_raw = df_actual.copy()
+elif df_target is not None:
+    df_raw = df_target.copy()
+
+if df_raw is None:
+    st.warning("⚠️ Silakan upload minimal 1 file (Actual atau Target).")
+    st.stop()
+
+# Normalisasi nama kolom biar tidak sensitif huruf besar / spasi
 df = normalize_columns(df_raw)
 
+# =========================
+# Mapping Kolom
+# =========================
 col_dp_date = match_col(df, ["dp date", "delivery date", "tanggal pengiriman", "dp_date", "tanggal_pengiriman"]) or "dp date"
 col_qty     = match_col(df, ["qty", "quantity", "volume"]) or "qty"
 col_sales   = match_col(df, ["sales man", "salesman", "sales name", "sales_name"]) or "sales man"
@@ -193,10 +210,14 @@ if missing:
     st.error("Kolom wajib tidak ditemukan: " + ", ".join(label_missing))
     st.stop()
 
+# =========================
+# Preprocessing Data
+# =========================
 df[col_dp_date] = pd.to_datetime(df[col_dp_date], errors="coerce")
 df = df.dropna(subset=[col_dp_date])
 df[col_qty] = pd.to_numeric(df[col_qty], errors="coerce").fillna(0)
 
+# Variabel Global
 DF_DATE = col_dp_date
 DF_QTY  = col_qty
 DF_SLS  = col_sales

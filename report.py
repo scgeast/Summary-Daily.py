@@ -4,7 +4,7 @@ import numpy as np
 import plotly.express as px
 from datetime import datetime
 
-st.set_page_config(page_title="🚚 Dashboard Monitoring Delivery And Sales", layout="L=23-51Xe")
+st.set_page_config(page_title="🚚 Dashboard Monitoring Delivery And Sales", layout="wide")
 
 # ========== THEME & COLOR ==========
 st.sidebar.header("🎨 Display Mode")

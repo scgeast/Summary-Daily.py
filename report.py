@@ -266,10 +266,9 @@ st.markdown("""
 
 col1, col2 = st.columns(2)
 with col1:
-    start_date = st.date_input("Start Date", df["Dp_date"].min())
+    start_date = st.date_input("Start Date", df[col_dp_date].min())
 with col2:
-    end_date = st.date_input("End Date", df["Dp_date"].max())
-
+    end_date = st.date_input("End Date", df[col_dp_date].max())
 col3, col4 = st.columns(2)
 with col3:
     area = st.selectbox("Area", ["All"] + sorted(df["Area"].dropna().unique().tolist()))

@@ -441,7 +441,7 @@ if DF_TRCK and DF_TRIP and DF_QTY and DF_TRCK in df_filtered.columns and DF_TRIP
     else:
         st.info("Kolom Distance tidak ditemukan di file.")
 
-# --- Average Distance per Plant ---
+# --- Average Distance per Plant (2 digit desimal) ---
 if DF_PLNT and DF_DIST and DF_PLNT in df_filtered.columns and DF_DIST in df_filtered.columns:
     dist_plant = (
         df_filtered.groupby(DF_PLNT, as_index=False)[DF_DIST]
@@ -456,9 +456,14 @@ if DF_PLNT and DF_DIST and DF_PLNT in df_filtered.columns and DF_DIST in df_filt
         y="Avg Distance",
         template=chart_template,
         title="Average Distance per Plant",
-        text_auto=True,
         color=DF_PLNT,
         color_discrete_sequence=futur_colors
+    )
+
+    # Atur label angka 2 digit desimal
+    fig_dist_plant.update_traces(
+        texttemplate="%{y:.2f}",  # 2 angka desimal
+        textposition="outside"
     )
 
     # Hilangkan legend supaya chart lebih bersih

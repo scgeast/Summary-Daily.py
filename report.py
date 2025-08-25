@@ -208,37 +208,39 @@ DF_TRCK = col_truck
 DF_ENDC = col_endcust
 
 
-# ========== FILTER DATA (DIPINDAH KE ATAS) ==========
-st.markdown("<div class='section-title'>🔍 Filter Data</div>", unsafe_allow_html=True)
-min_d = df[DF_DATE].min().date()
-max_d = df[DF_DATE].max().date()
-start_date, end_date = st.columns(2)
-with start_date:
-    start_date = st.date_input("Start Date", min_d)
-with end_date:
-    end_date   = st.date_input("End Date", max_d)
+# ========== FILTER DATA ==========
+with st.expander("🔍 Filter Data", expanded=True):
+    min_d = df[DF_DATE].min().date()
+    max_d = df[DF_DATE].max().date()
 
-if DF_AREA:
-    areas = ["All"] + sorted(df[DF_AREA].dropna().astype(str).unique().tolist())
-    sel_area = st.selectbox("Area", areas)
-else:
-    sel_area = "All"
+    start_col, end_col = st.columns(2)
+    with start_col:
+        start_date = st.date_input("Start Date", min_d)
+    with end_col:
+        end_date = st.date_input("End Date", max_d)
 
-if DF_PLNT:
-    if DF_AREA and sel_area != "All":
-        plants = ["All"] + sorted(
-            df[df[DF_AREA].astype(str) == str(sel_area)][DF_PLNT]
-            .dropna().astype(str).unique().tolist()
-        )
+    if DF_AREA:
+        areas = ["All"] + sorted(df[DF_AREA].dropna().astype(str).unique().tolist())
+        sel_area = st.selectbox("Area", areas)
     else:
-        plants = ["All"] + sorted(df[DF_PLNT].dropna().astype(str).unique().tolist())
-    sel_plant = st.selectbox("Plant Name", plants)
-else:
-    sel_plant = "All"
+        sel_area = "All"
 
-if st.button("🔄 Reset Filter"):
-    st.experimental_rerun()
+    if DF_PLNT:
+        if DF_AREA and sel_area != "All":
+            plants = ["All"] + sorted(
+                df[df[DF_AREA].astype(str) == str(sel_area)][DF_PLNT]
+                .dropna().astype(str).unique().tolist()
+            )
+        else:
+            plants = ["All"] + sorted(df[DF_PLNT].dropna().astype(str).unique().tolist())
+        sel_plant = st.selectbox("Plant Name", plants)
+    else:
+        sel_plant = "All"
 
+    if st.button("🔄 Reset Filter"):
+        st.experimental_rerun()
+
+# Apply filter mask
 mask = (df[DF_DATE].dt.date >= start_date) & (df[DF_DATE].dt.date <= end_date)
 if DF_AREA and sel_area != "All":
     mask &= df[DF_AREA].astype(str) == str(sel_area)
@@ -247,6 +249,7 @@ if DF_PLNT and sel_plant != "All":
 
 df_f = df.loc[mask].copy()
 day_span = max((end_date - start_date).days + 1, 1)
+
 
 # ========== SUMMARIZE (KPI CARDS) ==========
 st.markdown("<div class='section-title'>🧭 Summarize</div>", unsafe_allow_html=True)

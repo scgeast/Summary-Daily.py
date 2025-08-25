@@ -297,24 +297,26 @@ pick = st.radio("", ["Logistic", "Sales & End Customer"], horizontal=True)
 if pick == "Logistic":
     st.markdown("<div class='section-title'>📦 Logistic</div>", unsafe_allow_html=True)
     
-    # Chart: Pie per Area (persentase)
-    if DF_AREA:
-        vol_area = (
-            df_f.groupby(DF_AREA, as_index=False)[DF_QTY]
-            .sum()
-            .rename(columns={DF_QTY: "Volume"})
-            .sort_values("Volume", ascending=False)
-        )
-        fig2 = px.pie(
-            vol_area, names=DF_AREA, values="Volume", template=chart_template,
-            title="Total Volume per Area (Pie)"
-        )
-        fig2.update_traces(
-            textposition='inside',
-            texttemplate='%{label}<br>%{value:,.0f} (%{percent})',
-            pull=[0.08 if i == 0 else 0 for i in range(len(vol_area))]
-        )
+    # Chart: Total Volume per Area (Bar)
+if DF_AREA:
+    vol_area = (
+        df_f.groupby(DF_AREA, as_index=False)[DF_QTY]
+        .sum()
+        .rename(columns={DF_QTY: "Total Volume"})
+        .sort_values("Total Volume", ascending=False)
+    )
+    fig2 = bar_desc(
+        vol_area, 
+        x=DF_AREA, 
+        y="Total Volume", 
+        title="Total Volume per Area (Bar)", 
+        color_base=accent, 
+        color_highlight=accent_light,
+        template=chart_template
+    )
+    if fig2:
         st.plotly_chart(fig2, use_container_width=True)
+
 
     # Chart: Total Volume / Day
     vol_day = (

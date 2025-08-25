@@ -274,11 +274,11 @@ kpi_cols = st.columns(7)
 fmt0 = lambda x: f"{int(x):,}" if pd.notna(x) else "0"
 fmtN0 = lambda x: f"{x:,.0f}" if pd.notna(x) else "0"
 
-tot_area  = df_f[DF_AREA].nunique() if DF_AREA else 0
-tot_plant = df_f[DF_PLNT].nunique() if DF_PLNT else 0
-tot_vol   = float(df_f[DF_QTY].sum())
-tot_truck = df_f[DF_TRCK].nunique() if (DF_TRCK and DF_TRCK in df_f.columns) else 0
-tot_trip  = df_f[DF_TRIP].nunique() if DF_TRIP in df_f.columns else 0
+tot_area  = df_filtered[col_area].nunique() if col_area else 0
+tot_plant = df_filtered[col_plant].nunique() if col_plant else 0
+tot_vol   = float(df_filtered[col_qty].sum())
+tot_truck = df_filtered[col_truck].nunique() if col_truck else 0
+tot_trip  = df_filtered[col_trip].nunique() if col_trip else 0
 avg_vol_day = (tot_vol / day_span) if day_span > 0 else 0
 avg_load_trip = (tot_vol / tot_trip) if tot_trip > 0 else 0
 
@@ -314,16 +314,16 @@ pick = st.radio("", ["Logistic", "Sales & End Customer"], horizontal=True)
 if pick == "Logistic":
     st.markdown("<div class='section-title'>📦 Logistic</div>", unsafe_allow_html=True)
     
-    # Chart: Pie per Area (persentase)
-    if DF_AREA:
+    # Chart: Pie per Area
+    if col_area:
         vol_area = (
-            df_f.groupby(DF_AREA, as_index=False)[DF_QTY]
+            df_filtered.groupby(col_area, as_index=False)[col_qty]
             .sum()
-            .rename(columns={DF_QTY: "Volume"})
+            .rename(columns={col_qty: "Volume"})
             .sort_values("Volume", ascending=False)
         )
         fig2 = px.pie(
-            vol_area, names=DF_AREA, values="Volume", template=chart_template,
+            vol_area, names=col_area, values="Volume", template=chart_template,
             title="Total Volume per Area (Pie)"
         )
         fig2.update_traces(
@@ -333,32 +333,31 @@ if pick == "Logistic":
         )
         st.plotly_chart(fig2, use_container_width=True)
 
-
     # Chart: Total Volume / Day
     vol_day = (
-        df_f.groupby(DF_DATE, as_index=False)[DF_QTY]
+        df_filtered.groupby(col_dp_date, as_index=False)[col_qty]
         .sum()
-        .rename(columns={DF_QTY: "Total Volume"})
+        .rename(columns={col_qty: "Total Volume"})
     )
-    fig1 = bar_desc(vol_day, DF_DATE, "Total Volume", "Total Volume / Day", accent, accent_light, chart_template)
+    fig1 = bar_desc(vol_day, col_dp_date, "Total Volume", "Total Volume / Day", accent, accent_light, chart_template)
     if fig1:
         st.plotly_chart(fig1, use_container_width=True)
 
-        # Chart Volume per Plant (Actual vs Target)
-    if DF_PLNT:
+    # Chart Volume per Plant
+    if col_plant:
         vol_plant = (
-            df_f.groupby(DF_PLNT, as_index=False)[DF_QTY]
+            df_filtered.groupby(col_plant, as_index=False)[col_qty]
             .sum()
-            .rename(columns={DF_QTY: "Actual"})
+            .rename(columns={col_qty: "Actual"})
         )
-        if File_Actual_uploaded is not None:
+        if target_uploaded is not None:
             df_target = pd.read_excel(target_uploaded)
             df_target.columns = df_target.columns.str.strip().str.lower()
             plant_col = [c for c in df_target.columns if "plant" in c][0]
             target_col = [c for c in df_target.columns if "target" in c][0]
             df_target = df_target.rename(columns={plant_col: "Plant Name", target_col: "Target"})
             merged = pd.merge(
-                vol_plant.rename(columns={DF_PLNT: "Plant Name"}),
+                vol_plant.rename(columns={col_plant: "Plant Name"}),
                 df_target[["Plant Name", "Target"]],
                 on="Plant Name", how="left"
             )
@@ -371,16 +370,16 @@ if pick == "Logistic":
             fig3.update_traces(textposition='outside')
             st.plotly_chart(fig3, use_container_width=True)
         else:
-            fig3 = bar_desc(vol_plant, DF_PLNT, "Actual", "Total Volume per Plant Name", accent, accent_light, chart_template)
+            fig3 = bar_desc(vol_plant, col_plant, "Actual", "Total Volume per Plant Name", accent, accent_light, chart_template)
             if fig3:
                 st.plotly_chart(fig3, use_container_width=True)
 
     # Chart Volume per Area (Actual vs Target)
-    if DF_AREA:
+    if col_area:
         vol_area_bar = (
-            df_f.groupby(DF_AREA, as_index=False)[DF_QTY]
+            df_filtered.groupby(col_area, as_index=False)[col_qty]
             .sum()
-            .rename(columns={DF_QTY: "Actual"})
+            .rename(columns={col_qty: "Actual"})
         )
         if target_uploaded is not None:
             df_target = pd.read_excel(target_uploaded)
@@ -389,7 +388,7 @@ if pick == "Logistic":
             target_col = [c for c in df_target.columns if "target" in c][0]
             df_target = df_target.rename(columns={area_col: "Area", target_col: "Target"})
             merged = pd.merge(
-                vol_area_bar.rename(columns={DF_AREA: "Area"}),
+                vol_area_bar.rename(columns={col_area: "Area"}),
                 df_target[["Area", "Target"]],
                 on="Area", how="left"
             )
@@ -402,50 +401,50 @@ if pick == "Logistic":
             fig_area.update_traces(textposition='outside')
             st.plotly_chart(fig_area, use_container_width=True)
         else:
-            fig_area = bar_desc(vol_area_bar, DF_AREA, "Actual", "Total Volume per Area", accent, accent_light, chart_template)
+            fig_area = bar_desc(vol_area_bar, col_area, "Actual", "Total Volume per Area", accent, accent_light, chart_template)
             if fig_area:
                 st.plotly_chart(fig_area, use_container_width=True)
 
     # Chart Avg Volume / Day per Area
-    if DF_AREA:
-        avg_area = df_f.groupby(DF_AREA, as_index=False)[DF_QTY].sum()
-        avg_area["Avg/Day"] = avg_area[DF_QTY] / day_span
-        fig4 = bar_desc(avg_area[[DF_AREA, "Avg/Day"]], DF_AREA, "Avg/Day", "Avg Volume / Day per Area", accent, accent_light, chart_template, is_avg=True)
+    if col_area:
+        avg_area = df_filtered.groupby(col_area, as_index=False)[col_qty].sum()
+        avg_area["Avg/Day"] = avg_area[col_qty] / day_span
+        fig4 = bar_desc(avg_area[[col_area, "Avg/Day"]], col_area, "Avg/Day", "Avg Volume / Day per Area", accent, accent_light, chart_template, is_avg=True)
         if fig4:
             st.plotly_chart(fig4, use_container_width=True)
 
     # Chart Avg Volume / Day per Plant
-    if DF_PLNT:
-        avg_plant = df_f.groupby(DF_PLNT, as_index=False)[DF_QTY].sum()
-        avg_plant["Avg/Day"] = avg_plant[DF_QTY] / day_span
-        fig5 = bar_desc(avg_plant[[DF_PLNT, "Avg/Day"]], DF_PLNT, "Avg/Day", "Avg Volume / Day per Plant Name", accent, accent_light, chart_template, is_avg=True)
+    if col_plant:
+        avg_plant = df_filtered.groupby(col_plant, as_index=False)[col_qty].sum()
+        avg_plant["Avg/Day"] = avg_plant[col_qty] / day_span
+        fig5 = bar_desc(avg_plant[[col_plant, "Avg/Day"]], col_plant, "Avg/Day", "Avg Volume / Day per Plant Name", accent, accent_light, chart_template, is_avg=True)
         if fig5:
             st.plotly_chart(fig5, use_container_width=True)
 
     # Truck Utilization
     st.markdown("<div class='subtitle'>🚛 Truck Utilization</div>", unsafe_allow_html=True)
-    if DF_TRCK:
+    if col_truck:
         truck_vol = (
-            df_f.groupby(DF_TRCK, as_index=False)[DF_QTY]
+            df_filtered.groupby(col_truck, as_index=False)[col_qty]
             .sum()
-            .rename(columns={DF_QTY: "Total Volume"})
+            .rename(columns={col_qty: "Total Volume"})
         )
-        fig6 = bar_desc(truck_vol, DF_TRCK, "Total Volume", "Total Volume per Truck", accent, accent_light, chart_template)
+        fig6 = bar_desc(truck_vol, col_truck, "Total Volume", "Total Volume per Truck", accent, accent_light, chart_template)
         if fig6:
             st.plotly_chart(fig6, use_container_width=True)
 
         trips_per_truck = (
-            df_f.groupby(DF_TRCK, as_index=False)[DF_TRIP]
+            df_filtered.groupby(col_truck, as_index=False)[col_trip]
             .nunique()
-            .rename(columns={DF_TRIP: "Total Trip"})
+            .rename(columns={col_trip: "Total Trip"})
         )
-        fig7 = bar_desc(trips_per_truck, DF_TRCK, "Total Trip", "Total Trip per Truck", accent, accent_light, chart_template)
+        fig7 = bar_desc(trips_per_truck, col_truck, "Total Trip", "Total Trip per Truck", accent, accent_light, chart_template)
         if fig7:
             st.plotly_chart(fig7, use_container_width=True)
 
-        avg_load = pd.merge(truck_vol, trips_per_truck, on=DF_TRCK, how='left')
+        avg_load = pd.merge(truck_vol, trips_per_truck, on=col_truck, how='left')
         avg_load["Avg Load/Trip"] = np.where(avg_load["Total Trip"]>0, avg_load["Total Volume"] / avg_load["Total Trip"], 0)
-        fig8 = bar_desc(avg_load[[DF_TRCK, "Avg Load/Trip"]], DF_TRCK, "Avg Load/Trip", "Avg Load per Trip per Truck", accent, accent_light, chart_template, is_avg=True)
+        fig8 = bar_desc(avg_load[[col_truck, "Avg Load/Trip"]], col_truck, "Avg Load/Trip", "Avg Load per Trip per Truck", accent, accent_light, chart_template, is_avg=True)
         if fig8:
             st.plotly_chart(fig8, use_container_width=True)
     else:
@@ -453,25 +452,25 @@ if pick == "Logistic":
 
     # Distance Analysis
     st.markdown("<div class='subtitle'>📏 Distance Analysis</div>", unsafe_allow_html=True)
-    if DF_DIST is None:
+    if not col_dist:
         st.info("Kolom Distance tidak ditemukan di file.")
     else:
-        if DF_AREA:
+        if col_area:
             dist_area = (
-                df_f.groupby(DF_AREA, as_index=False)[DF_DIST]
+                df_filtered.groupby(col_area, as_index=False)[col_dist]
                 .mean()
-                .rename(columns={DF_DIST: "Avg Distance"})
+                .rename(columns={col_dist: "Avg Distance"})
             )
-            fig10 = bar_desc(dist_area, DF_AREA, "Avg Distance", "Avg Distance per Area", accent, accent_light, chart_template, is_avg=True)
+            fig10 = bar_desc(dist_area, col_area, "Avg Distance", "Avg Distance per Area", accent, accent_light, chart_template, is_avg=True)
             if fig10:
                 st.plotly_chart(fig10, use_container_width=True)
-        if DF_PLNT:
+        if col_plant:
             dist_plant = (
-                df_f.groupby(DF_PLNT, as_index=False)[DF_DIST]
+                df_filtered.groupby(col_plant, as_index=False)[col_dist]
                 .mean()
-                .rename(columns={DF_DIST: "Avg Distance"})
+                .rename(columns={col_dist: "Avg Distance"})
             )
-            fig11 = bar_desc(dist_plant, DF_PLNT, "Avg Distance", "Avg Distance per Plant", accent, accent_light, chart_template, is_avg=True)
+            fig11 = bar_desc(dist_plant, col_plant, "Avg Distance", "Avg Distance per Plant", accent, accent_light, chart_template, is_avg=True)
             if fig11:
                 st.plotly_chart(fig11, use_container_width=True)
 
@@ -481,24 +480,25 @@ if pick == "Logistic":
 if pick == "Sales & End Customer":
     st.markdown("<div class='section-title'>💼 Sales & End Customer Performance</div>", unsafe_allow_html=True)
     st.markdown("<div class='subtitle'>🧑‍💼 Sales</div>", unsafe_allow_html=True)
-    sales = (
-        df_f.groupby(DF_SLS, as_index=False)[DF_QTY]
-        .sum()
-        .rename(columns={DF_QTY: "Total Volume"})
-    )
-    figA = bar_desc(sales, DF_SLS, "Total Volume", "Total Volume per Sales Man", accent, accent_light, chart_template)
-    if figA:
-        st.plotly_chart(figA, use_container_width=True)
+    if col_sales:
+        sales = (
+            df_filtered.groupby(col_sales, as_index=False)[col_qty]
+            .sum()
+            .rename(columns={col_qty: "Total Volume"})
+        )
+        figA = bar_desc(sales, col_sales, "Total Volume", "Total Volume per Sales Man", accent, accent_light, chart_template)
+        if figA:
+            st.plotly_chart(figA, use_container_width=True)
 
     # End Customer
-    if DF_ENDC:
+    if col_endcust:
         st.markdown("<div class='subtitle'>👥 End Customer</div>", unsafe_allow_html=True)
         endc = (
-            df_f.groupby(DF_ENDC, as_index=False)[DF_QTY]
+            df_filtered.groupby(col_endcust, as_index=False)[col_qty]
             .sum()
-            .rename(columns={DF_QTY: "Total Volume"})
+            .rename(columns={col_qty: "Total Volume"})
         )
-        figB = bar_desc(endc, DF_ENDC, "Total Volume", "Total Volume per End Customer Name", accent, accent_light, chart_template)
+        figB = bar_desc(endc, col_endcust, "Total Volume", "Total Volume per End Customer Name", accent, accent_light, chart_template)
         if figB:
             st.plotly_chart(figB, use_container_width=True)
     else:

@@ -268,20 +268,20 @@ tot_vol   = float(df_f[DF_QTY].sum())
 tot_truck = df_f[DF_TRCK].nunique() if (DF_TRCK and DF_TRCK in df_f.columns) else 0
 # Total trip (unique dp no) untuk menghindari double count
 tot_trip  = df_f[DF_TRIP].nunique() if DF_TRIP in df_f.columns else 0
-# Avg volume per day (keseluruhan range filter)
+# Avg volume/day (keseluruhan range filter)
 avg_vol_day = (tot_vol / day_span) if day_span > 0 else 0
-# Avg load per trip (Total Volume / Total Trip)
-avg_load_trip = (tot_vol / tot_trip) if tot_trip > 0 else 0
+# Avg load per trip 
+avg_load/trip = (tot_vol / tot_trip) if tot_trip > 0 else 0
 
 # Render kartu KPI bergaya futuristik
 kpis = [
     ("🌍 Total Area", fmt0(tot_area)),
     ("🏭 Total Plant", fmt0(tot_plant)),
     ("📦 Total Volume", fmtN0(tot_vol)),
-    ("📅 Avg Volume / Day", fmtN0(avg_vol_day)),
+    ("📅 Avg Volume/Day", fmtN0(avg_vol_day)),
     ("🚛 Total Truck", fmt0(tot_truck)),
     ("🧾 Total Trip", fmt0(tot_trip)),
-    ("⚖️ Avg Load per Trip<br><span style='font-size:11px'>(Total Volume : Total Trip)</span>", fmtN0(avg_load_trip)),
+    ("⚖️ Avg Load/Trip<br><span style='font-size:11px'>(Total Volume : Total Trip)</span>", fmtN0(avg_load_trip)),
 ]
 
 for col, (label, value) in zip(kpi_cols, kpis):

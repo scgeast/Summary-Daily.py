@@ -15,8 +15,9 @@ if mode == "Dark":
     base_bg = "#0b0f19"
     card_bg = "#0f172a"
     text_color = "#FFFFFF"
-    accent = "#7C3AED"
-    accent_light = "#A78BFA"
+    accent = "#00E5FF"       # Cyan Neon
+    accent_light = "#FF00FF" # Magenta Neon
+    futur_colors = ["#00E5FF", "#FF00FF", "#39FF14", "#FFEA00", "#FF4D4D"]
     font_color = "#fff"
 else:
     chart_template = "plotly_white"
@@ -24,7 +25,8 @@ else:
     card_bg = "#F8FAFC"
     text_color = "#111827"
     accent = "#2563EB"
-    accent_light = "#60A5FA"
+    accent_light = "#7C3AED"
+    futur_colors = ["#2563EB", "#7C3AED", "#06B6D4", "#D946EF", "#F59E0B"]
     font_color = "#111827"
 
 st.markdown(
@@ -82,25 +84,61 @@ def match_col(df: pd.DataFrame, candidates: list[str]) -> str | None:
                 return c
     return None
 
+# ---------- BAR CHART ----------
 def bar_desc(df, x, y, title, color_base, color_highlight, template="plotly_white", is_avg=False):
     if df.empty:
         return None
     data = df.copy()
     data[y] = pd.to_numeric(data[y], errors="coerce").fillna(0)
     data = data.sort_values(y, ascending=False)
-    max_val = data[y].max()
-    colors = [color_highlight if v == max_val else color_base for v in data[y]]
-    fig = px.bar(data, x=x, y=y, template=template, title=title)
-    fig.update_traces(marker_color=colors)
+    fig = px.bar(
+        data, x=x, y=y, template=template, title=title,
+        color=data[y], color_continuous_scale=futur_colors
+    )
     label_fmt = ",.0f"
     fig.update_traces(
         texttemplate=f"%{{y:{label_fmt}}}",
         textposition="outside",
         cliponaxis=False
     )
-    fig.update_layout(xaxis_title=None, yaxis_title=None, bargap=0.35)
+    fig.update_layout(
+        xaxis_title=None, yaxis_title=None, bargap=0.35,
+        coloraxis_showscale=False
+    )
     fig.update_yaxes(tickformat=label_fmt)
     return fig
+
+# ---------- PIE CHART ----------
+def pie_chart(df, names, values, title):
+    if df.empty:
+        return None
+    fig = px.pie(
+        df, names=names, values=values, template=chart_template,
+        title=title, hole=0.35, color_discrete_sequence=futur_colors
+    )
+    fig.update_traces(textinfo="percent+label")
+    return fig
+
+# ---------- GROUP BAR CHART ----------
+def group_bar(df, x, y, color, title):
+    if df.empty:
+        return None
+    fig = px.bar(
+        df, x=x, y=y, color=color, template=chart_template,
+        title=title, barmode="group", color_discrete_sequence=futur_colors
+    )
+    return fig
+
+# ---------- LINE CHART ----------
+def line_chart(df, x, y, title):
+    if df.empty:
+        return None
+    fig = px.line(
+        df, x=x, y=y, template=chart_template,
+        title=title, markers=True, color_discrete_sequence=futur_colors
+    )
+    return fig
+
 
 # ========== UPLOAD DATA ==========
 uploaded = st.file_uploader("📂 Upload File Excel Delivery (2MB–50MB)", type=["xlsx", "xls"], key="actual")

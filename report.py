@@ -229,6 +229,7 @@ DF_TRCK = col_truck
 DF_ENDC = col_endcust
 
 # ========== FILTER DATA (DIPINDAH KE ATAS) ==========
+with st.expander("🔎 Filter Data", expanded=True): 
 st.markdown("<div class='section-title'>🔍 Filter Data</div>", unsafe_allow_html=True)
 min_d = df[DF_DATE].min().date()
 max_d = df[DF_DATE].max().date()

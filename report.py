@@ -1,158 +1,434 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import plotly.express as px
 from datetime import datetime
 
-# =========================
-# Page Config
-# =========================
-st.set_page_config(
-    page_title="🚀 Dashboard Monitoring Delivery And Sales",
-    layout="wide"
+st.set_page_config(page_title="🚚 Dashboard Monitoring Delivery And Sales", layout="wide")
+
+# ========== THEME & COLOR ==========
+st.sidebar.header("🎨 Display Mode")
+mode = st.sidebar.radio("Pilih Mode", ["Light", "Dark"], horizontal=True)
+
+if mode == "Dark":
+    chart_template = "plotly_dark"
+    base_bg = "#0b0f19"
+    card_bg = "#0f172a"
+    text_color = "#FFFFFF"
+    accent = "#7C3AED"
+    accent_light = "#A78BFA"
+    font_color = "#fff"
+else:
+    chart_template = "plotly_white"
+    base_bg = "#FFFFFF"
+    card_bg = "#F8FAFC"
+    text_color = "#111827"
+    accent = "#2563EB"
+    accent_light = "#60A5FA"
+    font_color = "#111827"
+
+st.markdown(
+    f"""
+    <style>
+      .main {{ background-color: {base_bg}; color:{text_color}; }}
+      .metric-card {{
+        background: linear-gradient(135deg, {card_bg} 0%, {card_bg} 70%, {accent}22 100%);
+        border: 1px solid {accent}33; border-radius: 18px; padding: 16px; box-shadow: 0 10px 30px #00000022;
+      }}
+      .metric-value {{
+        font-size: 26px; font-weight: 800; color: {font_color} !important;
+      }}
+      .metric-label {{
+        font-size: 12px; opacity: .8; text-transform: uppercase; letter-spacing:.03em;
+        color: {font_color} !important;
+      }}
+      .section-title {{ font-size: 22px; font-weight: 800; margin: 8px 0 6px 0; color:{text_color}; }}
+      .subtitle {{ font-size: 16px; opacity:.95; margin: 8px 0 8px 0; }}
+    </style>
+    """,
+    unsafe_allow_html=True,
 )
 
-# =========================
-# Custom CSS (Futuristic Neon Theme)
-# =========================
-st.markdown("""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Poppins:wght@300;600&display=swap');
+st.markdown(
+    f"""
+    <div style='display:flex; align-items:center; justify-content:space-between;'>
+      <h1 style='margin:0;color:{text_color}'>🚀 Dashboard Monitoring Delivery And Sales</h1>
+      <div style='opacity:.9;color:{text_color};font-weight:600;'>⏱️ {datetime.now().strftime('%d-%m-%Y %H:%M:%S')}</div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
-    html, body, [class*="css"]  {
-        font-family: 'Poppins', sans-serif;
-    }
+# ========== HELPER ==========
+def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    out = df.copy()
+    out.columns = (
+        out.columns.astype(str)
+        .str.replace("\n", " ")
+        .str.strip()
+        .str.lower()
+        .str.replace(r"\s+", " ", regex=True)
+    )
+    return out
 
-    .main-title {
-        font-family: 'Orbitron', sans-serif;
-        font-size: 32px;
-        font-weight: 700;
-        background: linear-gradient(90deg, #00F5D4, #9B5DE5, #F15BB5);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        text-shadow: 0px 0px 8px #00F5D4;
-    }
+def match_col(df: pd.DataFrame, candidates: list[str]) -> str | None:
+    cols = list(df.columns)
+    for cand in candidates:
+        for c in cols:
+            if c == cand:
+                return c
+        for c in cols:
+            if cand in c:
+                return c
+    return None
 
-    .neon-card {
-        border-radius: 20px;
-        padding: 20px;
-        text-align: center;
-        background: rgba(20,20,30,0.8);
-        box-shadow: 0px 0px 15px rgba(0,245,212,0.6);
-        color: #FFFFFF;
-    }
+def bar_desc(df, x, y, title, color_base, color_highlight, template="plotly_white", is_avg=False):
+    if df.empty:
+        return None
+    data = df.copy()
+    data[y] = pd.to_numeric(data[y], errors="coerce").fillna(0)
+    data = data.sort_values(y, ascending=False)
+    max_val = data[y].max()
+    colors = [color_highlight if v == max_val else color_base for v in data[y]]
+    fig = px.bar(data, x=x, y=y, template=template, title=title)
+    fig.update_traces(marker_color=colors)
+    label_fmt = ",.0f"
+    fig.update_traces(
+        texttemplate=f"%{{y:{label_fmt}}}",
+        textposition="outside",
+        cliponaxis=False
+    )
+    fig.update_layout(xaxis_title=None, yaxis_title=None, bargap=0.35)
+    fig.update_yaxes(tickformat=label_fmt)
+    return fig
 
-    .metric-value {
-        font-size: 28px;
-        font-weight: 700;
-        color: #00F5D4;
-        text-shadow: 0px 0px 6px #9B5DE5;
-    }
+# ========== UPLOAD DATA ==========
+uploaded = st.file_uploader("📂 Upload File Excel Delivery (2MB–50MB)", type=["xlsx", "xls"], key="actual")
+target_uploaded = st.file_uploader("📁 Upload File Target Volume (Plant/Area, optional)", type=["xlsx", "xls"], key="target")
 
-    .metric-label {
-        font-size: 14px;
-        font-weight: 400;
-        color: #BBBBBB;
-    }
-    </style>
-""", unsafe_allow_html=True)
+if uploaded is None:
+    st.info("Silakan upload file Excel delivery terlebih dahulu (ukuran 2MB–50MB).")
+    st.stop()
 
-# =========================
-# Sidebar
-# =========================
-with st.sidebar:
-    st.subheader("🎨 Display Mode")
-    mode = st.radio("Pilih Mode", ["Light", "Dark"], index=1)
+size_mb = uploaded.size / (1024 * 1024)
+if size_mb < 2 or size_mb > 50:
+    st.error("⚠️ File harus berukuran antara 2MB - 50MB")
+    st.stop()
 
-    st.subheader("🔍 Filter Data")
-    start_date = st.date_input("Start Date", datetime(2025,8,1))
-    end_date = st.date_input("End Date", datetime(2025,8,24))
-    area = st.selectbox("Area", ["EAST INDONESIA","WEST INDONESIA"])
-    plant = st.selectbox("Plant Name", ["All","Plant A","Plant B"])
+try:
+    xls = pd.ExcelFile(uploaded)
+    df_raw = xls.parse(0)
+except Exception as e:
+    st.error(f"Gagal membaca file: {e}")
+    st.stop()
 
-    if st.button("Reset Filter"):
-        st.experimental_rerun()
+df = normalize_columns(df_raw)
 
-# =========================
-# Title
-# =========================
-col1, col2 = st.columns([8,2])
-with col1:
-    st.markdown("<h1 class='main-title'>🚀 Dashboard Monitoring Delivery And Sales</h1>", unsafe_allow_html=True)
-with col2:
-    st.write("⏱", datetime.now().strftime("%d-%m-%Y %H:%M:%S"))
+col_dp_date = match_col(df, ["dp date", "delivery date", "tanggal pengiriman", "dp_date", "tanggal_pengiriman"]) or "dp date"
+col_qty     = match_col(df, ["qty", "quantity", "volume"]) or "qty"
+col_sales   = match_col(df, ["sales man", "salesman", "sales name", "sales_name"]) or "sales man"
+col_dp_no   = match_col(df, ["dp no", "ritase", "dp_no", "trip"]) or "dp no"
+col_area    = match_col(df, ["area"]) or None
+col_plant   = match_col(df, ["plant name", "plant", "plant_name"]) or None
+col_distance= match_col(df, ["distance", "jarak"]) or None
+col_truck   = match_col(df, ["truck no", "truck", "truck_no", "nopol", "vehicle"]) or None
+col_endcust = match_col(df, ["end customer name", "end customer", "customer", "end_customer"]) or None
 
-# =========================
-# Upload Files
-# =========================
-st.subheader("📂 Upload File Excel Delivery (2MB–50MB)")
-upload_file = st.file_uploader("Upload Delivery File", type=["xlsx","xls"])
+required_map = {
+    col_dp_date: "Dp Date",
+    col_qty:     "Qty",
+    col_sales:   "Sales Man",
+    col_dp_no:   "Dp No",
+}
+missing = [k for k in required_map.keys() if (k is None or k not in df.columns)]
+if missing:
+    label_missing = [required_map.get(m, str(m)) for m in missing]
+    st.error("Kolom wajib tidak ditemukan: " + ", ".join(label_missing))
+    st.stop()
 
-st.subheader("📂 Upload File Target Volume (Optional)")
-upload_target = st.file_uploader("Upload Target File", type=["xlsx","xls"])
+df[col_dp_date] = pd.to_datetime(df[col_dp_date], errors="coerce")
+df = df.dropna(subset=[col_dp_date])
+df[col_qty] = pd.to_numeric(df[col_qty], errors="coerce").fillna(0)
 
-# =========================
-# Dummy Data (contoh)
-# =========================
-if upload_file is None:
-    df = pd.DataFrame({
-        "Tanggal":["2025-08-01","2025-08-02","2025-08-03"],
-        "Volume":[500,600,550],
-        "Truck":[20,22,23],
-        "Trip":[100,105,98],
-        "Sales":["A","B","A"],
-        "Customer":["Cust1","Cust2","Cust1"]
-    })
+DF_DATE = col_dp_date
+DF_QTY  = col_qty
+DF_SLS  = col_sales
+DF_TRIP = col_dp_no
+DF_AREA = col_area
+DF_PLNT = col_plant
+DF_DIST = col_distance
+DF_TRCK = col_truck
+DF_ENDC = col_endcust
+
+# ========== SIDEBAR FILTERS ==========
+st.sidebar.header("🔍 Filter Data")
+min_d = df[DF_DATE].min().date()
+max_d = df[DF_DATE].max().date()
+start_date = st.sidebar.date_input("Start Date", min_d)
+end_date   = st.sidebar.date_input("End Date", max_d)
+
+if DF_AREA:
+    areas = ["All"] + sorted(df[DF_AREA].dropna().astype(str).unique().tolist())
+    sel_area = st.sidebar.selectbox("Area", areas)
 else:
-    df = pd.read_excel(upload_file)
+    sel_area = "All"
 
-# =========================
-# Summarize Cards
-# =========================
-st.markdown("### ⏱ Summarize")
-col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
+if DF_PLNT:
+    if DF_AREA and sel_area != "All":
+        plants = ["All"] + sorted(
+            df[df[DF_AREA].astype(str) == str(sel_area)][DF_PLNT]
+            .dropna().astype(str).unique().tolist()
+        )
+    else:
+        plants = ["All"] + sorted(df[DF_PLNT].dropna().astype(str).unique().tolist())
+    sel_plant = st.sidebar.selectbox("Plant Name", plants)
+else:
+    sel_plant = "All"
 
-with col1:
-    st.markdown("<div class='neon-card'><div class='metric-value'>1</div><div class='metric-label'>TOTAL AREA</div></div>", unsafe_allow_html=True)
-with col2:
-    st.markdown("<div class='neon-card'><div class='metric-value'>7</div><div class='metric-label'>TOTAL PLANT</div></div>", unsafe_allow_html=True)
-with col3:
-    st.markdown(f"<div class='neon-card'><div class='metric-value'>{df['Volume'].sum():,}</div><div class='metric-label'>TOTAL VOLUME</div></div>", unsafe_allow_html=True)
-with col4:
-    st.markdown(f"<div class='neon-card'><div class='metric-value'>{int(df['Volume'].mean()):,}</div><div class='metric-label'>AVG VOL/DAY</div></div>", unsafe_allow_html=True)
-with col5:
-    st.markdown(f"<div class='neon-card'><div class='metric-value'>{df['Truck'].sum():,}</div><div class='metric-label'>TOTAL TRUCK</div></div>", unsafe_allow_html=True)
-with col6:
-    st.markdown(f"<div class='neon-card'><div class='metric-value'>{df['Trip'].sum():,}</div><div class='metric-label'>TOTAL TRIP</div></div>", unsafe_allow_html=True)
-with col7:
-    st.markdown("<div class='neon-card'><div class='metric-value'>5</div><div class='metric-label'>AVG LOAD/TRIP</div></div>", unsafe_allow_html=True)
+if st.sidebar.button("🔄 Reset Filter"):
+    st.experimental_rerun()
 
-# =========================
-# Tabs
-# =========================
-tab1, tab2 = st.tabs(["🚚 Logistic Dashboard","📊 Sales Dashboard"])
+mask = (df[DF_DATE].dt.date >= start_date) & (df[DF_DATE].dt.date <= end_date)
+if DF_AREA and sel_area != "All":
+    mask &= df[DF_AREA].astype(str) == str(sel_area)
+if DF_PLNT and sel_plant != "All":
+    mask &= df[DF_PLNT].astype(str) == str(sel_plant)
 
-with tab1:
-    st.subheader("📦 Daily Delivery Volume")
-    fig = px.bar(df, x="Tanggal", y="Volume", color="Tanggal",
-                 color_discrete_sequence=["#00F5D4","#9B5DE5","#F15BB5"])
-    st.plotly_chart(fig, use_container_width=True)
+df_f = df.loc[mask].copy()
+day_span = max((end_date - start_date).days + 1, 1)
 
-    st.subheader("🚛 Truck Utilization")
-    fig2 = px.line(df, x="Tanggal", y="Truck",
-                   markers=True, line_shape="spline",
-                   color_discrete_sequence=["#9B5DE5"])
-    st.plotly_chart(fig2, use_container_width=True)
+# ========== SUMMARIZE (KPI CARDS) ==========
+st.markdown("<div class='section-title'>🧭 Summarize</div>", unsafe_allow_html=True)
+kpi_cols = st.columns(7)
+fmt0 = lambda x: f"{int(x):,}" if pd.notna(x) else "0"
+fmtN0 = lambda x: f"{x:,.0f}" if pd.notna(x) else "0"
 
-with tab2:
-    st.subheader("👨‍💼 Sales Performance")
-    sales_perf = df.groupby("Sales")["Volume"].sum().reset_index()
-    fig3 = px.pie(sales_perf, values="Volume", names="Sales",
-                  color_discrete_sequence=["#00F5D4","#9B5DE5","#F15BB5"])
-    st.plotly_chart(fig3, use_container_width=True)
+tot_area  = df_f[DF_AREA].nunique() if DF_AREA else 0
+tot_plant = df_f[DF_PLNT].nunique() if DF_PLNT else 0
+tot_vol   = float(df_f[DF_QTY].sum())
+tot_truck = df_f[DF_TRCK].nunique() if (DF_TRCK and DF_TRCK in df_f.columns) else 0
+tot_trip  = df_f[DF_TRIP].nunique() if DF_TRIP in df_f.columns else 0
+avg_vol_day = (tot_vol / day_span) if day_span > 0 else 0
+avg_load_trip = (tot_vol / tot_trip) if tot_trip > 0 else 0
 
-    st.subheader("🏢 Customer Performance")
-    cust_perf = df.groupby("Customer")["Volume"].sum().reset_index()
-    fig4 = px.bar(cust_perf, x="Customer", y="Volume",
-                  color="Customer", text_auto=True,
-                  color_discrete_sequence=["#00F5D4","#9B5DE5","#F15BB5"])
-    st.plotly_chart(fig4, use_container_width=True)
+kpis = [
+    ("🌍 Total Area", fmt0(tot_area)),
+    ("🏭 Total Plant", fmt0(tot_plant)),
+    ("📦 Total Volume", fmtN0(tot_vol)),
+    ("📅 Avg Vol/Day", fmtN0(avg_vol_day)),
+    ("🚛 Total Truck", fmt0(tot_truck)),
+    ("🧾 Total Trip", fmt0(tot_trip)),
+    ("⚖️ Avg Load/Trip", fmtN0(avg_load_trip)),
+]
+
+for col, (label, value) in zip(kpi_cols, kpis):
+    with col:
+        st.markdown(
+            "<div class='metric-card'>"
+            f"<div class='metric-label'>{label}</div>"
+            f"<div class='metric-value'>{value}</div>"
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
+st.markdown("<hr style='opacity:.2;'>", unsafe_allow_html=True)
+
+# ========== SWITCH DASHBOARD ==========
+st.markdown("<div class='section-title'>🎛️ Pilih Dashboard</div>", unsafe_allow_html=True)
+pick = st.radio("", ["Logistic", "Sales & End Customer"], horizontal=True)
+
+# ----------------------------------------------------
+# DASHBOARD 1: LOGISTIC
+# ----------------------------------------------------
+if pick == "Logistic":
+    st.markdown("<div class='section-title'>📦 Logistic</div>", unsafe_allow_html=True)
+    st.markdown("<div class='subtitle'>🚚 Delivery Performance per Day</div>", unsafe_allow_html=True)
+
+    # Chart: Total Volume / Day
+    vol_day = (
+        df_f.groupby(DF_DATE, as_index=False)[DF_QTY]
+        .sum()
+        .rename(columns={DF_QTY: "Total Volume"})
+    )
+    fig1 = bar_desc(vol_day, DF_DATE, "Total Volume", "Total Volume / Day", accent, accent_light, chart_template)
+    if fig1:
+        st.plotly_chart(fig1, use_container_width=True)
+
+    # Chart: Pie per Area (persentase)
+    if DF_AREA:
+        vol_area = (
+            df_f.groupby(DF_AREA, as_index=False)[DF_QTY]
+            .sum()
+            .rename(columns={DF_QTY: "Volume"})
+            .sort_values("Volume", ascending=False)
+        )
+        fig2 = px.pie(
+            vol_area, names=DF_AREA, values="Volume", template=chart_template,
+            title="Total Volume per Area (Pie)"
+        )
+        fig2.update_traces(
+            textposition='inside',
+            texttemplate='%{label}<br>%{value:,.0f} (%{percent})',
+            pull=[0.08 if i == 0 else 0 for i in range(len(vol_area))]
+        )
+        st.plotly_chart(fig2, use_container_width=True)
+
+    # Chart Volume per Plant (Actual vs Target)
+    if DF_PLNT:
+        vol_plant = (
+            df_f.groupby(DF_PLNT, as_index=False)[DF_QTY]
+            .sum()
+            .rename(columns={DF_QTY: "Actual"})
+        )
+        if target_uploaded is not None:
+            df_target = pd.read_excel(target_uploaded)
+            df_target.columns = df_target.columns.str.strip().str.lower()
+            plant_col = [c for c in df_target.columns if "plant" in c][0]
+            target_col = [c for c in df_target.columns if "target" in c][0]
+            df_target = df_target.rename(columns={plant_col: "Plant Name", target_col: "Target"})
+            merged = pd.merge(
+                vol_plant.rename(columns={DF_PLNT: "Plant Name"}),
+                df_target[["Plant Name", "Target"]],
+                on="Plant Name", how="left"
+            )
+            df_plot = merged.melt(id_vars="Plant Name", value_vars=["Actual", "Target"], var_name="Type", value_name="Volume")
+            fig3 = px.bar(
+                df_plot, x="Plant Name", y="Volume", color="Type", barmode="group", text="Volume",
+                color_discrete_sequence=[accent, "#F59E42"], template=chart_template,
+                title="Total Volume per Plant Name (Actual vs Target)"
+            )
+            fig3.update_traces(textposition='outside')
+            st.plotly_chart(fig3, use_container_width=True)
+        else:
+            fig3 = bar_desc(vol_plant, DF_PLNT, "Actual", "Total Volume per Plant Name", accent, accent_light, chart_template)
+            if fig3:
+                st.plotly_chart(fig3, use_container_width=True)
+
+    # Chart Volume per Area (Actual vs Target)
+    if DF_AREA:
+        vol_area_bar = (
+            df_f.groupby(DF_AREA, as_index=False)[DF_QTY]
+            .sum()
+            .rename(columns={DF_QTY: "Actual"})
+        )
+        if target_uploaded is not None:
+            df_target = pd.read_excel(target_uploaded)
+            df_target.columns = df_target.columns.str.strip().str.lower()
+            area_col = [c for c in df_target.columns if "area" in c][0]
+            target_col = [c for c in df_target.columns if "target" in c][0]
+            df_target = df_target.rename(columns={area_col: "Area", target_col: "Target"})
+            merged = pd.merge(
+                vol_area_bar.rename(columns={DF_AREA: "Area"}),
+                df_target[["Area", "Target"]],
+                on="Area", how="left"
+            )
+            df_plot = merged.melt(id_vars="Area", value_vars=["Actual", "Target"], var_name="Type", value_name="Volume")
+            fig_area = px.bar(
+                df_plot, x="Area", y="Volume", color="Type", barmode="group", text="Volume",
+                color_discrete_sequence=[accent, "#F59E42"], template=chart_template,
+                title="Total Volume per Area (Actual vs Target)"
+            )
+            fig_area.update_traces(textposition='outside')
+            st.plotly_chart(fig_area, use_container_width=True)
+        else:
+            fig_area = bar_desc(vol_area_bar, DF_AREA, "Actual", "Total Volume per Area", accent, accent_light, chart_template)
+            if fig_area:
+                st.plotly_chart(fig_area, use_container_width=True)
+
+    # Chart Avg Volume / Day per Area
+    if DF_AREA:
+        avg_area = df_f.groupby(DF_AREA, as_index=False)[DF_QTY].sum()
+        avg_area["Avg/Day"] = avg_area[DF_QTY] / day_span
+        fig4 = bar_desc(avg_area[[DF_AREA, "Avg/Day"]], DF_AREA, "Avg/Day", "Avg Volume / Day per Area", accent, accent_light, chart_template, is_avg=True)
+        if fig4:
+            st.plotly_chart(fig4, use_container_width=True)
+
+    # Chart Avg Volume / Day per Plant
+    if DF_PLNT:
+        avg_plant = df_f.groupby(DF_PLNT, as_index=False)[DF_QTY].sum()
+        avg_plant["Avg/Day"] = avg_plant[DF_QTY] / day_span
+        fig5 = bar_desc(avg_plant[[DF_PLNT, "Avg/Day"]], DF_PLNT, "Avg/Day", "Avg Volume / Day per Plant Name", accent, accent_light, chart_template, is_avg=True)
+        if fig5:
+            st.plotly_chart(fig5, use_container_width=True)
+
+    # Truck Utilization
+    st.markdown("<div class='subtitle'>🚛 Truck Utilization</div>", unsafe_allow_html=True)
+    if DF_TRCK:
+        truck_vol = (
+            df_f.groupby(DF_TRCK, as_index=False)[DF_QTY]
+            .sum()
+            .rename(columns={DF_QTY: "Total Volume"})
+        )
+        fig6 = bar_desc(truck_vol, DF_TRCK, "Total Volume", "Total Volume per Truck", accent, accent_light, chart_template)
+        if fig6:
+            st.plotly_chart(fig6, use_container_width=True)
+
+        trips_per_truck = (
+            df_f.groupby(DF_TRCK, as_index=False)[DF_TRIP]
+            .nunique()
+            .rename(columns={DF_TRIP: "Total Trip"})
+        )
+        fig7 = bar_desc(trips_per_truck, DF_TRCK, "Total Trip", "Total Trip per Truck", accent, accent_light, chart_template)
+        if fig7:
+            st.plotly_chart(fig7, use_container_width=True)
+
+        avg_load = pd.merge(truck_vol, trips_per_truck, on=DF_TRCK, how='left')
+        avg_load["Avg Load/Trip"] = np.where(avg_load["Total Trip"]>0, avg_load["Total Volume"] / avg_load["Total Trip"], 0)
+        fig8 = bar_desc(avg_load[[DF_TRCK, "Avg Load/Trip"]], DF_TRCK, "Avg Load/Trip", "Avg Load per Trip per Truck", accent, accent_light, chart_template, is_avg=True)
+        if fig8:
+            st.plotly_chart(fig8, use_container_width=True)
+    else:
+        st.info("Kolom Truck No tidak ditemukan.")
+
+    # Distance Analysis
+    st.markdown("<div class='subtitle'>📏 Distance Analysis</div>", unsafe_allow_html=True)
+    if DF_DIST is None:
+        st.info("Kolom Distance tidak ditemukan di file.")
+    else:
+        if DF_AREA:
+            dist_area = (
+                df_f.groupby(DF_AREA, as_index=False)[DF_DIST]
+                .mean()
+                .rename(columns={DF_DIST: "Avg Distance"})
+            )
+            fig10 = bar_desc(dist_area, DF_AREA, "Avg Distance", "Avg Distance per Area", accent, accent_light, chart_template, is_avg=True)
+            if fig10:
+                st.plotly_chart(fig10, use_container_width=True)
+        if DF_PLNT:
+            dist_plant = (
+                df_f.groupby(DF_PLNT, as_index=False)[DF_DIST]
+                .mean()
+                .rename(columns={DF_DIST: "Avg Distance"})
+            )
+            fig11 = bar_desc(dist_plant, DF_PLNT, "Avg Distance", "Avg Distance per Plant", accent, accent_light, chart_template, is_avg=True)
+            if fig11:
+                st.plotly_chart(fig11, use_container_width=True)
+
+# ----------------------------------------------------
+# DASHBOARD 2: SALES & END CUSTOMER
+# ----------------------------------------------------
+if pick == "Sales & End Customer":
+    st.markdown("<div class='section-title'>💼 Sales & End Customer Performance</div>", unsafe_allow_html=True)
+    st.markdown("<div class='subtitle'>🧑‍💼 Sales</div>", unsafe_allow_html=True)
+    sales = (
+        df_f.groupby(DF_SLS, as_index=False)[DF_QTY]
+        .sum()
+        .rename(columns={DF_QTY: "Total Volume"})
+    )
+    figA = bar_desc(sales, DF_SLS, "Total Volume", "Total Volume per Sales Man", accent, accent_light, chart_template)
+    if figA:
+        st.plotly_chart(figA, use_container_width=True)
+
+    # End Customer
+    if DF_ENDC:
+        st.markdown("<div class='subtitle'>👥 End Customer</div>", unsafe_allow_html=True)
+        endc = (
+            df_f.groupby(DF_ENDC, as_index=False)[DF_QTY]
+            .sum()
+            .rename(columns={DF_QTY: "Total Volume"})
+        )
+        figB = bar_desc(endc, DF_ENDC, "Total Volume", "Total Volume per End Customer Name", accent, accent_light, chart_template)
+        if figB:
+            st.plotly_chart(figB, use_container_width=True)
+    else:
+        st.info("Kolom End Customer Name tidak ditemukan di file.")

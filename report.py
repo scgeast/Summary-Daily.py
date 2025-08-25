@@ -339,19 +339,28 @@ pick = st.radio("", ["Logistic", "Sales & End Customer"], horizontal=True)
 if pick == "Logistic":
     st.markdown("<div class='section-title'>🚚 Logistic Performance</div>", unsafe_allow_html=True)
 
-    # --- Volume per Area ---
-    if DF_AREA and DF_AREA in df_filtered.columns and DF_QTY in df_filtered.columns:
-        vol_area = (
-            df_filtered.groupby(DF_AREA, as_index=False)[DF_QTY]
-            .sum()
-            .rename(columns={DF_QTY: "Volume"})
-            .sort_values("Volume", ascending=False)
+   # --- Volume per Area (Bar Chart) ---
+if DF_AREA and DF_AREA in df_filtered.columns and DF_QTY in df_filtered.columns:
+    vol_area = (
+        df_filtered.groupby(DF_AREA, as_index=False)[DF_QTY]
+        .sum()
+        .rename(columns={DF_QTY: "Volume"})
+        .sort_values("Volume", ascending=False)
+    )
+    fig_area = px.bar(
+        vol_area, x=DF_AREA, y="Volume", template=chart_template,
+        title="Total Volume per Area (Bar)", text_auto=True,
+        color=DF_AREA, color_discrete_sequence=futur_colors
+    )
+    fig_area.update_layout(
+        legend=dict(
+            orientation="h",
+            y=-0.2,
+            x=0,
+            xanchor="left"
         )
-        fig_area = px.pie(
-            vol_area, names=DF_AREA, values="Volume", template=chart_template,
-            title="Total Volume per Area (Pie)"
-        )
-        st.plotly_chart(fig_area, use_container_width=True)
+    )
+    st.plotly_chart(fig_area, use_container_width=True)
 
     # --- Volume per Plant ---
     if DF_PLNT and DF_PLNT in df_filtered.columns and DF_QTY in df_filtered.columns:

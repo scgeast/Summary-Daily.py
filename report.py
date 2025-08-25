@@ -486,9 +486,21 @@ elif pick == "Sales & End Customer":
             .sort_values("Volume", ascending=False)
         )
         fig_sales = px.bar(
-            vol_sales, x=DF_SLS, y="Volume", template=chart_template,
-            title="Total Volume per Salesman", text_auto=True
+            vol_sales,
+            x=DF_SLS,
+            y="Volume",
+            template=chart_template,
+            title="Total Volume per Salesman",
+            color=DF_SLS,
+            color_discrete_sequence=futur_colors
         )
+
+        # Label 2 desimal, legend dihilangkan
+        fig_sales.update_traces(
+            texttemplate="%{y:.2f}",
+            textposition="outside"
+        )
+        fig_sales.update_layout(showlegend=False, yaxis_title="Volume")
         st.plotly_chart(fig_sales, use_container_width=True)
 
     # --- Volume per End Customer ---
@@ -500,7 +512,19 @@ elif pick == "Sales & End Customer":
             .sort_values("Volume", ascending=False)
         )
         fig_endcust = px.bar(
-            vol_endcust.head(15), x=DF_ENDC, y="Volume", template=chart_template,
-            title="Top 15 End Customer by Volume", text_auto=True
+            vol_endcust.head(15),
+            x=DF_ENDC,
+            y="Volume",
+            template=chart_template,
+            title="Top 15 End Customer by Volume",
+            color=DF_ENDC,
+            color_discrete_sequence=futur_colors
         )
+
+        # Label 2 desimal, legend dihilangkan
+        fig_endcust.update_traces(
+            texttemplate="%{y:.2f}",
+            textposition="outside"
+        )
+        fig_endcust.update_layout(showlegend=False, yaxis_title="Volume")
         st.plotly_chart(fig_endcust, use_container_width=True)

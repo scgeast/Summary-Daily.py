@@ -188,27 +188,34 @@ df = normalize_columns(df_raw)
 # =========================
 # Mapping Kolom
 # =========================
-col_dp_date = match_col(df, ["dp date", "delivery date", "tanggal pengiriman", "dp_date", "tanggal_pengiriman"]) or "dp date"
-col_qty     = match_col(df, ["qty", "quantity", "volume"]) or "qty"
-col_sales   = match_col(df, ["sales man", "salesman", "sales name", "sales_name"]) or "sales man"
-col_dp_no   = match_col(df, ["dp no", "ritase", "dp_no", "trip"]) or "dp no"
-col_area    = match_col(df, ["area"]) or None
-col_plant   = match_col(df, ["plant name", "plant", "plant_name"]) or None
-col_distance= match_col(df, ["distance", "jarak"]) or None
-col_truck   = match_col(df, ["truck no", "truck", "truck_no", "nopol", "vehicle"]) or None
-col_endcust = match_col(df, ["end customer name", "end customer", "customer", "end_customer"]) or None
+col_dp_date = match_col(df, ["dp date", "delivery date", "tanggal pengiriman", "dp_date", "tanggal_pengiriman"])
+col_qty     = match_col(df, ["qty", "quantity", "volume"])
+col_sales   = match_col(df, ["sales man", "salesman", "sales name", "sales_name"])
+col_dp_no   = match_col(df, ["dp no", "ritase", "dp_no", "trip"])
+col_area    = match_col(df, ["area"])
+col_plant   = match_col(df, ["plant name", "plant", "plant_name"])
+col_distance= match_col(df, ["distance", "jarak"])
+col_truck   = match_col(df, ["truck no", "truck", "truck_no", "nopol", "vehicle"])
+col_endcust = match_col(df, ["end customer name", "end customer", "customer", "end_customer"])
 
+# Kolom wajib
 required_map = {
     col_dp_date: "Dp Date",
     col_qty:     "Qty",
     col_sales:   "Sales Man",
     col_dp_no:   "Dp No",
 }
-missing = [k for k in required_map.keys() if (k is None or k not in df.columns)]
+
+# Cek kolom wajib
+missing = [k for k in required_map if (k is None or k not in df.columns)]
 if missing:
-    label_missing = [required_map.get(m, str(m)) for m in missing]
-    st.error("Kolom wajib tidak ditemukan: " + ", ".join(label_missing))
+    st.error(f"⚠️ Kolom wajib hilang: {missing}. Pastikan file Excel punya kolom tersebut.")
     st.stop()
+
+# Pastikan tipe data benar
+df[col_dp_date] = pd.to_datetime(df[col_dp_date], errors="coerce")
+df[col_qty]     = pd.to_numeric(df[col_qty], errors="coerce").fillna(0)
+
 
 # =========================
 # Preprocessing Data

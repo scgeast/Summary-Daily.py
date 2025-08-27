@@ -1,16 +1,10 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import plotly.express as px
 from datetime import datetime
 
-# ==== Fungsi Normalisasi Nama Kolom ====
-def normalize_columns(df):
-    df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
-    return df
-# =====================
-# Page Config
-# =====================
-st.set_page_config(page_title="🚚 Summary Daily Report", layout="wide")
+st.set_page_config(page_title="🚚 Dashboard Monitoring Delivery And Sales", layout="wide")
 
 # ========== THEME & COLOR ==========
 st.sidebar.header("🎨 Display Mode")
@@ -90,16 +84,17 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# =====================
-# Helper: Auto detect column
-# =====================
-def auto_detect_col(df, keywords):
-    for c in df.columns:
-        cname = c.replace(" ", "").lower()
-        for kw in keywords:
-            if kw.lower().replace(" ", "") in cname:
-                return c
-    return None
+# ========== HELPER ==========
+def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    out = df.copy()
+    out.columns = (
+        out.columns.astype(str)
+        .str.replace("\n", " ")
+        .str.strip()
+        .str.lower()
+        .str.replace(r"\s+", " ", regex=True)
+    )
+    return out
 
 def match_col(df: pd.DataFrame, candidates: list[str]) -> str | None:
     cols = list(df.columns)
@@ -187,25 +182,32 @@ def line_chart(df, x, y, title):
     )
     return fig
 
-# ========== Upload & Load File Utama ==========
-uploaded_file = st.file_uploader("📂 Upload file utama (Excel/CSV)", type=["xlsx", "csv"])
+# ========== UPLOAD DATA DI SIDEBAR ==========
+st.sidebar.header("📂 Upload File Data")
+actual_file = st.sidebar.file_uploader("Upload File Actual (Excel)", type=["xlsx", "xls"])
+target_file = st.sidebar.file_uploader("Upload File Target (Excel)", type=["xlsx", "xls"])
 
-df = None
-if uploaded_file is not None:
-    try:
-        if uploaded_file.name.endswith(".csv"):
-            df = pd.read_csv(uploaded_file)
-        else:
-            df = pd.read_excel(uploaded_file)
+if actual_file is None:
+    st.info("Silakan upload file Actual terlebih dahulu (ukuran 2MB–50MB).")
+    st.stop()
 
-        # normalisasi kolom
-        df = normalize_columns(df)
+# Optional: batasi ukuran file
+size_mb = actual_file.size / (1024 * 1024)
+if size_mb < 2 or size_mb > 50:
+    st.error("⚠️ File harus berukuran antara 2MB - 50MB")
+    st.stop()
 
-    except Exception as e:
-        st.error(f"Gagal membaca file utama: {e}")
-else:
-    st.warning("⚠️ Silakan upload file utama terlebih dahulu.")
+# Baca file
+try:
+    xls = pd.ExcelFile(actual_file)
+    df_raw = xls.parse(0)
+except Exception as e:
+    st.error(f"Gagal membaca file: {e}")
+    st.stop()
 
+
+# Normalisasi kolom
+df = normalize_columns(df_raw)
 
 # Deteksi kolom penting
 col_dp_date = match_col(df, ["dp date", "delivery date", "tanggal pengiriman", "dp_date", "tanggal_pengiriman"]) or "dp date"
@@ -367,53 +369,39 @@ if pick == "Logistic":
     if fig1:
         st.plotly_chart(fig1, use_container_width=True)
 
-# ======================
-# Helper untuk target file
-# ======================
-def normalize_columns(df):
-    """Ubah nama kolom jadi lowercase & strip spasi"""
-    df.columns = df.columns.str.strip().str.lower()
-    return df
-
-def match_col(df, keywords):
-    """Cari kolom yg cocok dgn daftar keywords"""
-    for c in df.columns:
-        for kw in keywords:
-            if kw.lower().replace(" ", "") in c.replace(" ", "").lower():
-                return c
-    return None
-
-def merge_with_target(df_grouped, group_col, qty_col, target_file, key_options=["area"], value_options=["target"]):
-    """
-    df_grouped : DataFrame hasil groupby (sudah ada kolom 'Actual')
-    group_col  : nama kolom grouping di df_grouped (contoh: 'Area' atau 'Plant')
-    qty_col    : nama kolom quantity asli sebelum rename
-    target_file: file excel target
-    key_options: keyword cari kolom key (default: ['area'])
-    value_options: keyword cari kolom target (default: ['target'])
-    """
-    df_target = pd.read_excel(target_file)
-    df_target = normalize_columns(df_target)
-
-    key_col = match_col(df_target, key_options)
-    target_col = match_col(df_target, value_options)
-
-    if key_col and target_col:
-        df_target = df_target.rename(columns={key_col: group_col, target_col: "Target"})
-        merged = pd.merge(
-            df_grouped.rename(columns={group_col: group_col}),
-            df_target[[group_col, "Target"]],
-            on=group_col, how="left"
+    # Chart Volume per Plant (Actual vs Target)
+    if DF_PLNT:
+        vol_plant = (
+            df_f.groupby(DF_PLNT, as_index=False)[DF_QTY]
+            .sum()
+            .rename(columns={DF_QTY: "Actual"})
         )
-        return merged
-    else:
-        return None
+        if target_file is not None:
+            df_target = pd.read_excel(target_file)
+            df_target.columns = df_target.columns.str.strip().str.lower()
+            plant_col = [c for c in df_target.columns if "plant" in c][0]
+            target_col = [c for c in df_target.columns if "target" in c][0]
+            df_target = df_target.rename(columns={plant_col: "Plant Name", target_col: "Target"})
+            merged = pd.merge(
+                vol_plant.rename(columns={DF_PLNT: "Plant Name"}),
+                df_target[["Plant Name", "Target"]],
+                on="Plant Name", how="left"
+            )
+            df_plot = merged.melt(id_vars="Plant Name", value_vars=["Actual", "Target"], var_name="Type", value_name="Volume")
+            fig3 = px.bar(
+                df_plot, x="Plant Name", y="Volume", color="Type", barmode="group", text="Volume",
+                color_discrete_sequence=[accent, "#F59E42"], template=chart_template,
+                title="Total Volume per Plant Name (Actual vs Target)"
+            )
+            fig3.update_traces(textposition='outside')
+            st.plotly_chart(fig3, use_container_width=True)
+        else:
+            fig3 = bar_desc(vol_plant, DF_PLNT, "Actual", "Total Volume per Plant Name", accent, accent_light, chart_template)
+            if fig3:
+                st.plotly_chart(fig3, use_container_width=True)
 
-
-# =====================
     # Chart Volume per Area (Actual vs Target)
-    # =====================
-    if DF_AREA and DF_QTY:
+    if DF_AREA:
         vol_area_bar = (
             df_f.groupby(DF_AREA, as_index=False)[DF_QTY]
             .sum()
@@ -430,8 +418,7 @@ def merge_with_target(df_grouped, group_col, qty_col, target_file, key_options=[
                 df_target[["Area", "Target"]],
                 on="Area", how="left"
             )
-            df_plot = merged.melt(id_vars="Area", value_vars=["Actual", "Target"],
-                                  var_name="Type", value_name="Volume")
+            df_plot = merged.melt(id_vars="Area", value_vars=["Actual", "Target"], var_name="Type", value_name="Volume")
             fig_area = px.bar(
                 df_plot, x="Area", y="Volume", color="Type", barmode="group", text="Volume",
                 color_discrete_sequence=[accent, "#F59E42"], template=chart_template,
@@ -440,46 +427,10 @@ def merge_with_target(df_grouped, group_col, qty_col, target_file, key_options=[
             fig_area.update_traces(textposition='outside')
             st.plotly_chart(fig_area, use_container_width=True)
         else:
-            fig_area = px.bar(
-                vol_area_bar, x=DF_AREA, y="Actual", text="Actual",
-                color_discrete_sequence=[accent], template=chart_template,
-                title="Total Volume per Area"
-            )
-            fig_area.update_traces(textposition='outside')
-            st.plotly_chart(fig_area, use_container_width=True)
+            fig_area = bar_desc(vol_area_bar, DF_AREA, "Actual", "Total Volume per Area", accent, accent_light, chart_template)
+            if fig_area:
+                st.plotly_chart(fig_area, use_container_width=True)
 
-    # =====================
-    # Chart Volume per Plant
-    # =====================
-    if DF_PLANT and DF_QTY:
-        vol_plant = (
-            df_f.groupby(DF_PLANT, as_index=False)[DF_QTY]
-            .sum()
-            .rename(columns={DF_QTY: "Total Volume"})
-        )
-        fig_plant = px.bar(
-            vol_plant, x=DF_PLANT, y="Total Volume", text="Total Volume",
-            color_discrete_sequence=[accent], template=chart_template,
-            title="Total Volume per Plant"
-        )
-        fig_plant.update_traces(textposition='outside')
-        st.plotly_chart(fig_plant, use_container_width=True)
-
-    # =====================
-    # Chart Trend per Day
-    # =====================
-    if DF_DATE and DF_QTY:
-        vol_day = (
-            df_f.groupby(DF_DATE, as_index=False)[DF_QTY]
-            .sum()
-            .rename(columns={DF_QTY: "Total Volume"})
-        )
-        fig_trend = px.line(
-            vol_day, x=DF_DATE, y="Total Volume",
-            markers=True, template=chart_template,
-            title="Trend Line of Total Volume / Day"
-        )
-        st.plotly_chart(fig_trend, use_container_width=True)
     # Chart Avg Volume / Day per Area
     if DF_AREA:
         avg_area = df_f.groupby(DF_AREA, as_index=False)[DF_QTY].sum()

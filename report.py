@@ -394,8 +394,35 @@ if pick == "Logistic":
             if fig_area:
                 st.plotly_chart(fig_area, use_container_width=True)
 
-    # Chart Avg Volume / Day per Area
-    if DF_AREA:
-        avg_area = df_f.groupby(DF_AREA, as_index=False)[DF_QTY].sum()
-        avg_area["Avg/Day"] = avg_area[DF_QTY] / day_span
-        fig4 =
+    # ================================
+# Chart Avg Volume / Day per Area
+# ================================
+if DF_AREA:
+    # Hitung total per area
+    avg_area = df_f.groupby(DF_AREA, as_index=False)[DF_QTY].sum()
+    # Bagi dengan jumlah hari supaya dapat avg/day
+    avg_area["Avg/Day"] = avg_area[DF_QTY] / day_span
+
+    # Chart (Bar Chart)
+    fig4 = px.bar(
+        avg_area,
+        x=DF_AREA,
+        y="Avg/Day",
+        title="📊 Avg Volume / Day per Area",
+        text="Avg/Day"  # tampilkan nilai di atas bar
+    )
+
+    # Styling chart
+    fig4.update_traces(
+        texttemplate='%{text:.0f}',  # angka tanpa desimal
+        textposition='outside'
+    )
+    fig4.update_layout(
+        yaxis_title="Avg Volume / Day",
+        xaxis_title="Area",
+        uniformtext_minsize=8,
+        uniformtext_mode='hide'
+    )
+
+    # Tampilkan di Streamlit
+    st.plotly_chart(fig4, use_container_width=True)

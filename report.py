@@ -29,23 +29,46 @@ else:
     futur_colors = ["#2563EB", "#7C3AED", "#06B6D4", "#D946EF", "#F59E0B"]
     font_color = "#111827"
 
+# ========== FUTURISTIC CSS ==========
 st.markdown(
     f"""
     <style>
-      .main {{ background-color: {base_bg}; color:{text_color}; }}
+      .main {{
+        background: radial-gradient(circle at 20% 20%, {base_bg}, #1b2735, #090a0f);
+        color:{text_color};
+      }}
+      .main::before {{
+        content: "";
+        position: fixed;
+        top:0;left:0;right:0;bottom:0;
+        background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                          linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+        background-size: 40px 40px;
+        z-index:0;
+      }}
+      h1,h2,h3,h4,.section-title {{
+        text-shadow: 0 0 8px {accent}, 0 0 16px {accent_light};
+        color:{text_color} !important;
+      }}
       .metric-card {{
         background: linear-gradient(135deg, {card_bg} 0%, {card_bg} 70%, {accent}22 100%);
-        border: 1px solid {accent}33; border-radius: 18px; padding: 16px; box-shadow: 0 10px 30px #00000022;
+        border: 1px solid {accent}33; border-radius: 18px; padding: 16px; 
+        box-shadow: 0 0 12px {accent}55, inset 0 0 25px {accent_light}11;
       }}
       .metric-value {{
         font-size: 26px; font-weight: 800; color: {font_color} !important;
+        text-shadow: 0 0 6px {accent};
       }}
       .metric-label {{
         font-size: 12px; opacity: .8; text-transform: uppercase; letter-spacing:.03em;
         color: {font_color} !important;
       }}
-      .section-title {{ font-size: 22px; font-weight: 800; margin: 8px 0 6px 0; color:{text_color}; }}
+      .section-title {{ font-size: 22px; font-weight: 800; margin: 8px 0 6px 0; }}
       .subtitle {{ font-size: 16px; opacity:.95; margin: 8px 0 8px 0; }}
+      /* scrollbar */
+      ::-webkit-scrollbar {{ width: 10px; }}
+      ::-webkit-scrollbar-track {{ background: #0b0e17; }}
+      ::-webkit-scrollbar-thumb {{ background: linear-gradient({accent}, {accent_light}); border-radius: 10px; }}
     </style>
     """,
     unsafe_allow_html=True,
@@ -103,9 +126,12 @@ def bar_desc(df, x, y, title, color_base, color_highlight, template="plotly_whit
     )
     fig.update_layout(
         xaxis_title=None, yaxis_title=None, bargap=0.35,
-        coloraxis_showscale=False
+        coloraxis_showscale=False,
+        plot_bgcolor="rgba(10,10,30,0.9)", paper_bgcolor="rgba(5,5,20,1)",
+        font=dict(color=text_color)
     )
-    fig.update_yaxes(tickformat=label_fmt)
+    fig.update_yaxes(tickformat=label_fmt, linecolor=accent, gridcolor=f"{accent}33")
+    fig.update_xaxes(linecolor=accent, gridcolor=f"{accent}22")
     return fig
 
 # ---------- PIE CHART ----------
@@ -138,7 +164,6 @@ def line_chart(df, x, y, title):
         title=title, markers=True, color_discrete_sequence=futur_colors
     )
     return fig
-
 
 # ========== UPLOAD DATA DI SIDEBAR ==========
 st.sidebar.header("📂 Upload File Data")

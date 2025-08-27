@@ -196,22 +196,17 @@ df = None
 if uploaded_file is not None:
     try:
         if uploaded_file.name.endswith(".csv"):
-            df_raw = pd.read_csv(uploaded_file)
+            df = pd.read_csv(uploaded_file)
         else:
-            df_raw = pd.read_excel(uploaded_file)
+            df = pd.read_excel(uploaded_file)
 
         # normalisasi nama kolom agar seragam
-        def normalize_columns(df):
-            df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
-            return df
-
-        df = normalize_columns(df_raw)
+        df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
 
     except Exception as e:
         st.error(f"Gagal membaca file utama: {e}")
 else:
     st.warning("⚠️ Silakan upload file utama terlebih dahulu.")
-# Normalisasi kolom
 
 df = normalize_columns(df_raw)
 

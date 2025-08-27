@@ -208,7 +208,7 @@ if uploaded_file is not None:
 else:
     st.warning("⚠️ Silakan upload file utama terlebih dahulu.")
 
-df = normalize_columns(df_raw)
+df = normalize_columns(df)
 
 # Deteksi kolom penting
 col_dp_date = match_col(df, ["dp date", "delivery date", "tanggal pengiriman", "dp_date", "tanggal_pengiriman"]) or "dp date"

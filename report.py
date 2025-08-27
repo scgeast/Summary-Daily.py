@@ -187,30 +187,32 @@ def line_chart(df, x, y, title):
     )
     return fig
 
-# =====================
-# Upload Data
-# =====================
-uploaded_file = st.file_uploader("Upload file data utama (Excel)", type=["xlsx"])
-target_file = st.file_uploader("Upload file target (Excel, optional)", type=["xlsx"])
+# =========================
+# Upload & Load File Utama
+# =========================
+uploaded_file = st.file_uploader("📂 Upload file utama (Excel/CSV)", type=["xlsx", "csv"])
 
-if uploaded_file:
-    df_f = pd.read_excel(uploaded_file)
-    df_f.columns = df_f.columns.str.strip()
+df = None
+if uploaded_file is not None:
+    try:
+        if uploaded_file.name.endswith(".csv"):
+            df_raw = pd.read_csv(uploaded_file)
+        else:
+            df_raw = pd.read_excel(uploaded_file)
 
-    # Auto detect kolom penting
-    DF_DATE  = auto_detect_col(df_f, ["date", "tanggal"])
-    DF_QTY   = auto_detect_col(df_f, ["qty", "volume", "jumlah"])
-    DF_AREA  = auto_detect_col(df_f, ["area", "region"])
-    DF_PLANT = auto_detect_col(df_f, ["plant", "plant code", "pabrik"])
+        # normalisasi nama kolom agar seragam
+        def normalize_columns(df):
+            df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
+            return df
 
-    accent = "#2563eb"
-    accent_light = "#60a5fa"
-    chart_template = "plotly_white"
+        df = normalize_columns(df_raw)
 
-    st.subheader("📊 Data Preview")
-    st.dataframe(df_f.head())
-
+    except Exception as e:
+        st.error(f"Gagal membaca file utama: {e}")
+else:
+    st.warning("⚠️ Silakan upload file utama terlebih dahulu.")
 # Normalisasi kolom
+
 df = normalize_columns(df_raw)
 
 # Deteksi kolom penting

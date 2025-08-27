@@ -114,25 +114,33 @@ def bar_desc(df, x, y, title, color_base, color_highlight, template="plotly_whit
     data = df.copy()
     data[y] = pd.to_numeric(data[y], errors="coerce").fillna(0)
     data = data.sort_values(y, ascending=False)
+
     fig = px.bar(
         data, x=x, y=y, template=template, title=title,
         color=data[y], color_continuous_scale=futur_colors
     )
-    label_fmt = ",.0f"
+
+    label_fmt = ",.0f" if not is_avg else ".2f"
     fig.update_traces(
         texttemplate=f"%{{y:{label_fmt}}}",
         textposition="outside",
         cliponaxis=False
     )
+
     fig.update_layout(
         xaxis_title=None, yaxis_title=None, bargap=0.35,
         coloraxis_showscale=False,
-        plot_bgcolor="rgba(10,10,30,0.9)", paper_bgcolor="rgba(5,5,20,1)",
+        plot_bgcolor="rgba(10,10,30,0.9)",
+        paper_bgcolor="rgba(5,5,20,1)",
         font=dict(color=text_color)
     )
-    fig.update_yaxes(tickformat=label_fmt, linecolor=accent, gridcolor=f"{accent}33")
-    fig.update_xaxes(linecolor=accent, gridcolor=f"{accent}22")
+
+    # ✅ perbaikan: tidak pakai tickformat di update_yaxes → cukup style axis
+    fig.update_yaxes(linecolor=accent, gridcolor=accent_light)
+    fig.update_xaxes(linecolor=accent, gridcolor=accent_light)
+
     return fig
+
 
 # ---------- PIE CHART ----------
 def pie_chart(df, names, values, title):

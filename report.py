@@ -107,6 +107,16 @@ def match_col(df: pd.DataFrame, candidates: list[str]) -> str | None:
                 return c
     return None
 
+# Tentukan warna background sesuai mode
+if mode == "Dark":
+    bg_plot = "rgba(10,10,30,0.9)"
+    bg_paper = "rgba(5,5,20,1)"
+    txt_color = "white"
+else:  # Light mode
+    bg_plot = "white"
+    bg_paper = "white"
+    txt_color = "black"
+
 # ---------- BAR CHART ----------
 def bar_desc(df, x, y, title, color_base, color_highlight, template="plotly_white", is_avg=False):
     if df.empty:
@@ -130,12 +140,11 @@ def bar_desc(df, x, y, title, color_base, color_highlight, template="plotly_whit
     fig.update_layout(
         xaxis_title=None, yaxis_title=None, bargap=0.35,
         coloraxis_showscale=False,
-        plot_bgcolor="rgba(10,10,30,0.9)",
-        paper_bgcolor="rgba(5,5,20,1)",
-        font=dict(color=text_color)
+        plot_bgcolor=bg_plot,
+        paper_bgcolor=bg_paper,
+        font=dict(color=txt_color)
     )
 
-    # ✅ perbaikan: tidak pakai tickformat di update_yaxes → cukup style axis
     fig.update_yaxes(linecolor=accent, gridcolor=accent_light)
     fig.update_xaxes(linecolor=accent, gridcolor=accent_light)
 

@@ -369,67 +369,112 @@ if pick == "Logistic":
     if fig1:
         st.plotly_chart(fig1, use_container_width=True)
 
-    # Chart Volume per Plant (Actual vs Target)
-    if DF_PLNT:
-        vol_plant = (
-            df_f.groupby(DF_PLNT, as_index=False)[DF_QTY]
-            .sum()
-            .rename(columns={DF_QTY: "Actual"})
-        )
-        if target_file is not None:
-            df_target = pd.read_excel(target_file)
-            df_target.columns = df_target.columns.str.strip().str.lower()
-            plant_col = [c for c in df_target.columns if "plant" in c][0]
-            target_col = [c for c in df_target.columns if "target" in c][0]
-            df_target = df_target.rename(columns={plant_col: "Plant Name", target_col: "Target"})
-            merged = pd.merge(
-                vol_plant.rename(columns={DF_PLNT: "Plant Name"}),
-                df_target[["Plant Name", "Target"]],
-                on="Plant Name", how="left"
-            )
-            df_plot = merged.melt(id_vars="Plant Name", value_vars=["Actual", "Target"], var_name="Type", value_name="Volume")
-            fig3 = px.bar(
-                df_plot, x="Plant Name", y="Volume", color="Type", barmode="group", text="Volume",
-                color_discrete_sequence=[accent, "#F59E42"], template=chart_template,
-                title="Total Volume per Plant Name (Actual vs Target)"
-            )
-            fig3.update_traces(textposition='outside')
-            st.plotly_chart(fig3, use_container_width=True)
-        else:
-            fig3 = bar_desc(vol_plant, DF_PLNT, "Actual", "Total Volume per Plant Name", accent, accent_light, chart_template)
-            if fig3:
-                st.plotly_chart(fig3, use_container_width=True)
+    # ======================
+# Helper untuk target file
+# ======================
+def normalize_columns(df):
+    """Ubah nama kolom jadi lowercase & strip spasi"""
+    df.columns = df.columns.str.strip().str.lower()
+    return df
 
-    # Chart Volume per Area (Actual vs Target)
-    if DF_AREA:
-        vol_area_bar = (
-            df_f.groupby(DF_AREA, as_index=False)[DF_QTY]
-            .sum()
-            .rename(columns={DF_QTY: "Actual"})
+def match_col(df, keywords):
+    """Cari kolom yg cocok dgn daftar keywords"""
+    for c in df.columns:
+        for kw in keywords:
+            if kw.lower().replace(" ", "") in c.replace(" ", "").lower():
+                return c
+    return None
+
+def merge_with_target(df_grouped, group_col, qty_col, target_file, key_options=["area"], value_options=["target"]):
+    """
+    df_grouped : DataFrame hasil groupby (sudah ada kolom 'Actual')
+    group_col  : nama kolom grouping di df_grouped (contoh: 'Area' atau 'Plant')
+    qty_col    : nama kolom quantity asli sebelum rename
+    target_file: file excel target
+    key_options: keyword cari kolom key (default: ['area'])
+    value_options: keyword cari kolom target (default: ['target'])
+    """
+    df_target = pd.read_excel(target_file)
+    df_target = normalize_columns(df_target)
+
+    key_col = match_col(df_target, key_options)
+    target_col = match_col(df_target, value_options)
+
+    if key_col and target_col:
+        df_target = df_target.rename(columns={key_col: group_col, target_col: "Target"})
+        merged = pd.merge(
+            df_grouped.rename(columns={group_col: group_col}),
+            df_target[[group_col, "Target"]],
+            on=group_col, how="left"
         )
-        if target_file is not None:
-            df_target = pd.read_excel(target_file)
-            df_target.columns = df_target.columns.str.strip().str.lower()
-            area_col = [c for c in df_target.columns if "area" in c][0]
-            target_col = [c for c in df_target.columns if "target" in c][0]
-            df_target = df_target.rename(columns={area_col: "Area", target_col: "Target"})
-            merged = pd.merge(
-                vol_area_bar.rename(columns={DF_AREA: "Area"}),
-                df_target[["Area", "Target"]],
-                on="Area", how="left"
+        return merged
+    else:
+        return None
+
+
+# ======================
+# Chart Volume per Plant (Actual vs Target)
+# ======================
+if DF_PLANT:
+    vol_plant_bar = (
+        df_f.groupby(DF_PLANT, as_index=False)[DF_QTY]
+        .sum()
+        .rename(columns={DF_QTY: "Actual"})
+    )
+
+    if target_file is not None:
+        merged = merge_with_target(vol_plant_bar, DF_PLANT, DF_QTY, target_file,
+                                   key_options=["plant"], value_options=["target", "volume target"])
+        if merged is not None:
+            df_plot = merged.melt(id_vars=DF_PLANT, value_vars=["Actual", "Target"],
+                                  var_name="Type", value_name="Volume")
+            fig_plant = px.bar(
+                df_plot, x=DF_PLANT, y="Volume", color="Type", barmode="group", text="Volume",
+                color_discrete_sequence=[accent, "#F59E42"], template=chart_template,
+                title="Total Volume per Plant (Actual vs Target)"
             )
-            df_plot = merged.melt(id_vars="Area", value_vars=["Actual", "Target"], var_name="Type", value_name="Volume")
+            fig_plant.update_traces(textposition='outside')
+            st.plotly_chart(fig_plant, use_container_width=True)
+        else:
+            st.warning("Kolom 'Plant' atau 'Target' tidak ditemukan di file target.")
+    else:
+        fig_plant = bar_desc(vol_plant_bar, DF_PLANT, "Actual",
+                             "Total Volume per Plant", accent, accent_light, chart_template)
+        if fig_plant:
+            st.plotly_chart(fig_plant, use_container_width=True)
+
+
+# ======================
+# Chart Volume per Area (Actual vs Target)
+# ======================
+if DF_AREA:
+    vol_area_bar = (
+        df_f.groupby(DF_AREA, as_index=False)[DF_QTY]
+        .sum()
+        .rename(columns={DF_QTY: "Actual"})
+    )
+
+    if target_file is not None:
+        merged = merge_with_target(vol_area_bar, DF_AREA, DF_QTY, target_file,
+                                   key_options=["area", "area name", "area_name"],
+                                   value_options=["target", "volume target"])
+        if merged is not None:
+            df_plot = merged.melt(id_vars=DF_AREA, value_vars=["Actual", "Target"],
+                                  var_name="Type", value_name="Volume")
             fig_area = px.bar(
-                df_plot, x="Area", y="Volume", color="Type", barmode="group", text="Volume",
+                df_plot, x=DF_AREA, y="Volume", color="Type", barmode="group", text="Volume",
                 color_discrete_sequence=[accent, "#F59E42"], template=chart_template,
                 title="Total Volume per Area (Actual vs Target)"
             )
             fig_area.update_traces(textposition='outside')
             st.plotly_chart(fig_area, use_container_width=True)
         else:
-            fig_area = bar_desc(vol_area_bar, DF_AREA, "Actual", "Total Volume per Area", accent, accent_light, chart_template)
-            if fig_area:
-                st.plotly_chart(fig_area, use_container_width=True)
+            st.warning("Kolom 'Area' atau 'Target' tidak ditemukan di file target.")
+    else:
+        fig_area = bar_desc(vol_area_bar, DF_AREA, "Actual",
+                            "Total Volume per Area", accent, accent_light, chart_template)
+        if fig_area:
+            st.plotly_chart(fig_area, use_container_width=True)
 
     # Chart Avg Volume / Day per Area
     if DF_AREA:

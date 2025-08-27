@@ -187,9 +187,7 @@ def line_chart(df, x, y, title):
     )
     return fig
 
-# =========================
-# Upload & Load File Utama
-# =========================
+# ========== Upload & Load File Utama ==========
 uploaded_file = st.file_uploader("📂 Upload file utama (Excel/CSV)", type=["xlsx", "csv"])
 
 df = None
@@ -200,15 +198,14 @@ if uploaded_file is not None:
         else:
             df = pd.read_excel(uploaded_file)
 
-        # normalisasi nama kolom agar seragam
-        df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
+        # normalisasi kolom
+        df = normalize_columns(df)
 
     except Exception as e:
         st.error(f"Gagal membaca file utama: {e}")
 else:
     st.warning("⚠️ Silakan upload file utama terlebih dahulu.")
 
-df = normalize_columns(df)
 
 # Deteksi kolom penting
 col_dp_date = match_col(df, ["dp date", "delivery date", "tanggal pengiriman", "dp_date", "tanggal_pengiriman"]) or "dp date"

@@ -248,6 +248,11 @@ DF_DIST = col_distance
 DF_TRCK = col_truck
 DF_ENDC = col_endcust
 
+# ========== BUAT KOLOM BULAN DAN TAHUN ==========
+# Tambahkan kolom bulan dan tahun untuk filter
+df['bulan'] = df[DF_DATE].dt.month
+df['tahun'] = df[DF_DATE].dt.year
+
 # ========== FILTER BULAN ==========
 st.sidebar.header("📅 Filter Bulan")
 
@@ -257,12 +262,8 @@ bulan_indonesia = [
     "Juli", "Agustus", "September", "Oktober", "November", "Desember"
 ]
 
-# Dapatkan bulan unik dari data
-df['bulan'] = df[DF_DATE].dt.month
-df['tahun'] = df[DF_DATE].dt.year
-
 # Buat pilihan bulan-tahun unik
-bulan_tahun_unik = sorted(df[['tahun', 'bulan']].drop_duplicates().to_records(index=False))
+bulan_tahun_unik = sorted(zip(df['tahun'].unique(), df['bulan'].unique()))
 pilihan_bulan = ["Semua Bulan"] + [f"{bulan_indonesia[bulan-1]} {tahun}" for tahun, bulan in bulan_tahun_unik]
 
 # Filter bulan di sidebar
@@ -311,7 +312,7 @@ if selected_month != "Semua Bulan":
     tahun = int(tahun_str)
     
     # Tambahkan filter bulan dan tahun
-    mask &= (df[DF_DATE].dt.month == bulan_index) & (df[DF_DATE].dt.year == tahun)
+    mask &= (df['bulan'] == bulan_index) & (df['tahun'] == tahun)
 
 if DF_AREA and sel_area != "All":
     mask &= df[DF_AREA].astype(str) == str(sel_area)

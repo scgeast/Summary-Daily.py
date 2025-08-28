@@ -185,7 +185,6 @@ def line_chart(df, x, y, title):
 # ========== UPLOAD DATA DI SIDEBAR ==========
 st.sidebar.header("📂 Upload File Data")
 actual_file = st.sidebar.file_uploader("Upload File Actual (Excel)", type=["xlsx", "xls"])
-target_file = st.sidebar.file_uploader("Upload File Target (Excel)", type=["xlsx", "xls"])
 
 if actual_file is None:
     st.info("Silakan upload file Actual terlebih dahulu (ukuran 2MB–50MB).")
@@ -369,67 +368,16 @@ if pick == "Logistic":
     if fig1:
         st.plotly_chart(fig1, use_container_width=True)
 
-    # Chart Volume per Plant (Actual vs Target)
+    # Chart Volume per Plant
     if DF_PLNT:
         vol_plant = (
             df_f.groupby(DF_PLNT, as_index=False)[DF_QTY]
             .sum()
             .rename(columns={DF_QTY: "Actual"})
         )
-        if target_file is not None:
-            df_target = pd.read_excel(target_file)
-            df_target.columns = df_target.columns.str.strip().str.lower()
-            plant_col = [c for c in df_target.columns if "plant" in c][0]
-            target_col = [c for c in df_target.columns if "target" in c][0]
-            df_target = df_target.rename(columns={plant_col: "Plant Name", target_col: "Target"})
-            merged = pd.merge(
-                vol_plant.rename(columns={DF_PLNT: "Plant Name"}),
-                df_target[["Plant Name", "Target"]],
-                on="Plant Name", how="left"
-            )
-            df_plot = merged.melt(id_vars="Plant Name", value_vars=["Actual", "Target"], var_name="Type", value_name="Volume")
-            fig3 = px.bar(
-                df_plot, x="Plant Name", y="Volume", color="Type", barmode="group", text="Volume",
-                color_discrete_sequence=[accent, "#F59E42"], template=chart_template,
-                title="Total Volume per Plant Name (Actual vs Target)"
-            )
-            fig3.update_traces(textposition='outside')
+        fig3 = bar_desc(vol_plant, DF_PLNT, "Actual", "Total Volume per Plant Name", accent, accent_light, chart_template)
+        if fig3:
             st.plotly_chart(fig3, use_container_width=True)
-        else:
-            fig3 = bar_desc(vol_plant, DF_PLNT, "Actual", "Total Volume per Plant Name", accent, accent_light, chart_template)
-            if fig3:
-                st.plotly_chart(fig3, use_container_width=True)
-
-    # Chart Volume per Area (Actual vs Target)
-    if DF_AREA:
-        vol_area_bar = (
-            df_f.groupby(DF_AREA, as_index=False)[DF_QTY]
-            .sum()
-            .rename(columns={DF_QTY: "Actual"})
-        )
-        if target_file is not None:
-            df_target = pd.read_excel(target_file)
-            df_target.columns = df_target.columns.str.strip().str.lower()
-            area_col = [c for c in df_target.columns if "area" in c][0]
-            target_col = [c for c in df_target.columns if "target" in c][0]
-            df_target = df_target.rename(columns={area_col: "Area", target_col: "Target"})
-            merged = pd.merge(
-                vol_area_bar.rename(columns={DF_AREA: "Area"}),
-                df_target[["Area", "Target"]],
-                on="Area", how="left"
-            )
-            df_plot = merged.melt(id_vars="Area", value_vars=["Actual", "Target"], var_name="Type", value_name="Volume")
-            fig_area = px.bar(
-                df_plot, x="Area", y="Volume", color="Type", barmode="group", text="Volume",
-                color_discrete_sequence=[accent, "#F59E42"], template=chart_template,
-                title="Total Volume per Area (Actual vs Target)"
-            )
-            fig_area.update_traces(textposition='outside')
-            st.plotly_chart(fig_area, use_container_width=True)
-        else:
-            fig_area = bar_desc(vol_area_bar, DF_AREA, "Actual", "Total Volume per Area", accent, accent_light, chart_template)
-            if fig_area:
-                st.plotly_chart(fig_area, use_container_width=True)
 
     # Chart Avg Volume / Day per Area
     if DF_AREA:
@@ -517,31 +465,31 @@ if pick == "Sales & End Customer":
     if figA:
         st.plotly_chart(figA, use_container_width=True)
 
-    # End Customer
+    # End Customer - Opsi pilihan
     if DF_ENDC:
         st.markdown("<div class='subtitle'>👥 End Customer</div>", unsafe_allow_html=True)
-        endc = (
-            df_f.groupby(DF_ENDC, as_index=False)[DF_QTY]
-            .sum()
-            .rename(columns={DF_QTY: "Total Volume"})
+        
+        # Tambahkan opsi untuk memilih tampilan
+        view_option = st.radio(
+            "Tampilkan:", 
+            ["Semua Customer", "Top 25 Customer"], 
+            horizontal=True
         )
-        figB = bar_desc(endc, DF_ENDC, "Total Volume", "Total Volume per End Customer Name", accent, accent_light, chart_template)
-        if figB:
-            st.plotly_chart(figB, use_container_width=True)
-    else:
-        st.info("Kolom End Customer Name tidak ditemukan di file.")
-
-    # End Customer (Top 25)
-    if DF_ENDC:
-        st.markdown("<div class='subtitle'>👥 End Customer (Top 25)</div>", unsafe_allow_html=True)
+        
         endc = (
             df_f.groupby(DF_ENDC, as_index=False)[DF_QTY]
             .sum()
             .rename(columns={DF_QTY: "Total Volume"})
             .sort_values("Total Volume", ascending=False)
-            .head(25)  # Ambil 25 teratas
         )
-        figB = bar_desc(endc, DF_ENDC, "Total Volume", "Top 25 End Customers by Total Volume", accent, accent_light, chart_template)
+        
+        if view_option == "Top 25 Customer":
+            endc = endc.head(25)
+            title = "Top 25 End Customers by Total Volume"
+        else:
+            title = "Total Volume per End Customer Name"
+        
+        figB = bar_desc(endc, DF_ENDC, "Total Volume", title, accent, accent_light, chart_template)
         if figB:
             st.plotly_chart(figB, use_container_width=True)
     else:

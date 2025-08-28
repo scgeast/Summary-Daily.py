@@ -463,36 +463,8 @@ if pick == "Logistic":
             if fig3:
                 st.plotly_chart(fig3, use_container_width=True)
 
-    # Chart Volume per Area (Actual vs Target) - TETAP ADA
-    if DF_AREA:
-        vol_area_bar = (
-            df_f.groupby(DF_AREA, as_index=False)[DF_QTY]
-            .sum()
-            .rename(columns={DF_QTY: "Actual"})
-        )
-        if target_file is not None:
-            df_target = pd.read_excel(target_file)
-            df_target.columns = df_target.columns.str.strip().str.lower()
-            area_col = [c for c in df_target.columns if "area" in c][0]
-            target_col = [c for c in df_target.columns if "target" in c][0]
-            df_target = df_target.rename(columns={area_col: "Area", target_col: "Target"})
-            merged = pd.merge(
-                vol_area_bar.rename(columns={DF_AREA: "Area"}),
-                df_target[["Area", "Target"]],
-                on="Area", how="left"
-            )
-            df_plot = merged.melt(id_vars="Area", value_vars=["Actual", "Target"], var_name="Type", value_name="Volume")
-            fig_area = px.bar(
-                df_plot, x="Area", y="Volume", color="Type", barmode="group", text="Volume",
-                color_discrete_sequence=[accent, "#F59E42"], template=chart_template,
-                title="Total Volume per Area (Actual vs Target)"
-            )
-            fig_area.update_traces(textposition='outside')
-            st.plotly_chart(fig_area, use_container_width=True)
-        else:
-            fig_area = bar_desc(vol_area_bar, DF_AREA, "Actual", "Total Volume per Area", accent, accent_light, chart_template)
-            if fig_area:
-                st.plotly_chart(fig_area, use_container_width=True)
+    # DIHAPUS: Chart Volume per Area (Actual vs Target) - YANG INI DIHILANGKAN
+    # (Baris 489-500 dihapus sepenuhnya)
 
     # Chart Avg Volume / Day per Area
     if DF_AREA:
@@ -580,21 +552,7 @@ if pick == "Sales & End Customer":
     if figA:
         st.plotly_chart(figA, use_container_width=True)
 
-    # End Customer
-    if DF_ENDC:
-        st.markdown("<div class='subtitle'>👥 End Customer</div>", unsafe_allow_html=True)
-        endc = (
-            df_f.groupby(DF_ENDC, as_index=False)[DF_QTY]
-            .sum()
-            .rename(columns={DF_QTY: "Total Volume"})
-        )
-        figB = bar_desc(endc, DF_ENDC, "Total Volume", "Total Volume per End Customer Name", accent, accent_light, chart_template)
-        if figB:
-            st.plotly_chart(figB, use_container_width=True)
-    else:
-        st.info("Kolom End Customer Name tidak ditemukan di file.")
-
-    # End Customer (Top 25)
+    # End Customer (Top 25) - HANYA TAMPILKAN YANG INI SAJA
     if DF_ENDC:
         st.markdown("<div class='subtitle'>👥 End Customer (Top 25)</div>", unsafe_allow_html=True)
         endc = (

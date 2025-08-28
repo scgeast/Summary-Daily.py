@@ -150,6 +150,27 @@ def bar_desc(df, x, y, title, color_base, color_highlight, template="plotly_whit
 
     return fig
 
+# ---------- GROUP BAR CHART PER BULAN ----------
+def group_bar_monthly(df, x, y, color, title, template="plotly_white"):
+    if df.empty:
+        return None
+    
+    # Extract month-year from date column
+    df_with_month = df.copy()
+    df_with_month['Bulan'] = df_with_month[DF_DATE].dt.to_period('M').astype(str)
+    
+    fig = px.bar(
+        df_with_month, x=x, y=y, color='Bulan', template=template,
+        title=title, barmode="group", color_discrete_sequence=futur_colors
+    )
+    
+    fig.update_layout(
+        plot_bgcolor=bg_plot,
+        paper_bgcolor=bg_paper,
+        font=dict(color=txt_color)
+    )
+    
+    return fig
 
 # ---------- PIE CHART ----------
 def pie_chart(df, names, values, title):
@@ -205,7 +226,6 @@ except Exception as e:
     st.error(f"Gagal membaca file: {e}")
     st.stop()
 
-
 # Normalisasi kolom
 df = normalize_columns(df_raw)
 
@@ -249,7 +269,6 @@ DF_DIST = col_distance
 DF_TRCK = col_truck
 DF_ENDC = col_endcust
 
-
 # ========== FILTER DATA ==========
 with st.expander("🔍 Filter Data", expanded=True):
     min_d = df[DF_DATE].min().date()
@@ -260,6 +279,11 @@ with st.expander("🔍 Filter Data", expanded=True):
         start_date = st.date_input("Start Date", min_d)
     with end_col:
         end_date = st.date_input("End Date", max_d)
+
+    # Filter bulan (tambahan baru)
+    df['Bulan'] = df[DF_DATE].dt.to_period('M').astype(str)
+    available_months = sorted(df['Bulan'].unique())
+    selected_months = st.multiselect("Pilih Bulan", available_months, default=available_months)
 
     if DF_AREA:
         areas = ["All"] + sorted(df[DF_AREA].dropna().astype(str).unique().tolist())
@@ -284,6 +308,8 @@ with st.expander("🔍 Filter Data", expanded=True):
 
 # Apply filter mask
 mask = (df[DF_DATE].dt.date >= start_date) & (df[DF_DATE].dt.date <= end_date)
+mask &= df['Bulan'].isin(selected_months)  # Filter bulan
+
 if DF_AREA and sel_area != "All":
     mask &= df[DF_AREA].astype(str) == str(sel_area)
 if DF_PLNT and sel_plant != "All":
@@ -291,7 +317,6 @@ if DF_PLNT and sel_plant != "All":
 
 df_f = df.loc[mask].copy()
 day_span = max((end_date - start_date).days + 1, 1)
-
 
 # ========== SUMMARIZE (KPI CARDS) ==========
 st.markdown("<div class='section-title'>🧭 Summarize</div>", unsafe_allow_html=True)
@@ -369,7 +394,49 @@ if pick == "Logistic":
     if fig1:
         st.plotly_chart(fig1, use_container_width=True)
 
-    # Chart Volume per Plant (Actual vs Target)
+    # Chart Volume per Plant (Per Bulan) - MODIFIKASI BARU
+    if DF_PLNT:
+        # Buat chart volume per plant per bulan
+        vol_plant_monthly = (
+            df_f.groupby([DF_PLNT, 'Bulan'], as_index=False)[DF_QTY]
+            .sum()
+            .rename(columns={DF_QTY: "Volume"})
+        )
+        
+        fig_plant_monthly = group_bar_monthly(
+            vol_plant_monthly, 
+            x=DF_PLNT, 
+            y="Volume", 
+            color='Bulan',
+            title="Volume per Plant per Bulan",
+            template=chart_template
+        )
+        
+        if fig_plant_monthly:
+            st.plotly_chart(fig_plant_monthly, use_container_width=True)
+
+    # Chart Volume per Area (Per Bulan) - MODIFIKASI BARU
+    if DF_AREA:
+        # Buat chart volume per area per bulan
+        vol_area_monthly = (
+            df_f.groupby([DF_AREA, 'Bulan'], as_index=False)[DF_QTY]
+            .sum()
+            .rename(columns={DF_QTY: "Volume"})
+        )
+        
+        fig_area_monthly = group_bar_monthly(
+            vol_area_monthly, 
+            x=DF_AREA, 
+            y="Volume", 
+            color='Bulan',
+            title="Volume per Area per Bulan",
+            template=chart_template
+        )
+        
+        if fig_area_monthly:
+            st.plotly_chart(fig_area_monthly, use_container_width=True)
+
+    # Chart Volume per Plant (Actual vs Target) - TETAP ADA
     if DF_PLNT:
         vol_plant = (
             df_f.groupby(DF_PLNT, as_index=False)[DF_QTY]
@@ -400,7 +467,7 @@ if pick == "Logistic":
             if fig3:
                 st.plotly_chart(fig3, use_container_width=True)
 
-    # Chart Volume per Area (Actual vs Target)
+    # Chart Volume per Area (Actual vs Target) - TETAP ADA
     if DF_AREA:
         vol_area_bar = (
             df_f.groupby(DF_AREA, as_index=False)[DF_QTY]

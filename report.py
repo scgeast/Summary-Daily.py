@@ -248,6 +248,25 @@ DF_DIST = col_distance
 DF_TRCK = col_truck
 DF_ENDC = col_endcust
 
+# ========== FILTER BULAN ==========
+st.sidebar.header("📅 Filter Bulan")
+
+# Buat list bulan dalam format Indonesia
+bulan_indonesia = [
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+]
+
+# Dapatkan bulan unik dari data
+df['bulan'] = df[DF_DATE].dt.month
+df['tahun'] = df[DF_DATE].dt.year
+
+# Buat pilihan bulan-tahun unik
+bulan_tahun_unik = sorted(df[['tahun', 'bulan']].drop_duplicates().to_records(index=False))
+pilihan_bulan = ["Semua Bulan"] + [f"{bulan_indonesia[bulan-1]} {tahun}" for tahun, bulan in bulan_tahun_unik]
+
+# Filter bulan di sidebar
+selected_month = st.sidebar.selectbox("Pilih Bulan", pilihan_bulan)
 
 # ========== FILTER DATA ==========
 with st.expander("🔍 Filter Data", expanded=True):
@@ -283,6 +302,17 @@ with st.expander("🔍 Filter Data", expanded=True):
 
 # Apply filter mask
 mask = (df[DF_DATE].dt.date >= start_date) & (df[DF_DATE].dt.date <= end_date)
+
+# Apply filter bulan jika dipilih
+if selected_month != "Semua Bulan":
+    # Parse bulan dan tahun yang dipilih
+    bulan_str, tahun_str = selected_month.split()
+    bulan_index = bulan_indonesia.index(bulan_str) + 1
+    tahun = int(tahun_str)
+    
+    # Tambahkan filter bulan dan tahun
+    mask &= (df[DF_DATE].dt.month == bulan_index) & (df[DF_DATE].dt.year == tahun)
+
 if DF_AREA and sel_area != "All":
     mask &= df[DF_AREA].astype(str) == str(sel_area)
 if DF_PLNT and sel_plant != "All":
@@ -291,6 +321,13 @@ if DF_PLNT and sel_plant != "All":
 df_f = df.loc[mask].copy()
 day_span = max((end_date - start_date).days + 1, 1)
 
+# Hitung jumlah bulan dalam filter
+if selected_month != "Semua Bulan":
+    month_count = 1
+else:
+    # Hitung jumlah bulan unik dalam periode yang difilter
+    unique_months = df_f[DF_DATE].dt.to_period('M').nunique()
+    month_count = max(unique_months, 1)
 
 # ========== SUMMARIZE (KPI CARDS) ==========
 st.markdown("<div class='section-title'>🧭 Summarize</div>", unsafe_allow_html=True)
@@ -304,14 +341,23 @@ tot_vol   = float(df_f[DF_QTY].sum())
 tot_truck = df_f[DF_TRCK].nunique() if (DF_TRCK and DF_TRCK in df_f.columns) else 0
 tot_trip  = df_f[DF_TRIP].nunique() if DF_TRIP in df_f.columns else 0
 avg_vol_day = (tot_vol / day_span) if day_span > 0 else 0
+avg_vol_month = (tot_vol / month_count) if month_count > 0 else 0
 avg_load_trip = (tot_vol / tot_trip) if tot_trip > 0 else 0
+
+# Tampilkan info filter bulan
+if selected_month != "Semua Bulan":
+    bulan_info = f"📅 Filter: {selected_month}"
+else:
+    bulan_info = f"📅 Jumlah Bulan: {month_count}"
+
+st.markdown(f"<div style='text-align:center; margin-bottom:20px; color:{accent}; font-weight:bold;'>{bulan_info}</div>", unsafe_allow_html=True)
 
 kpis = [
     ("🌍 Total Area", fmt0(tot_area)),
     ("🏭 Total Plant", fmt0(tot_plant)),
     ("📦 Total Volume", fmtN0(tot_vol)),
     ("📅 Avg Vol/Day", fmtN0(avg_vol_day)),
-    ("🚛 Total Truck", fmt0(tot_truck)),
+    ("📊 Avg Vol/Bulan", fmtN0(avg_vol_month)),
     ("🧾 Total Trip", fmt0(tot_trip)),
     ("⚖️ Avg Load/Trip", fmtN0(avg_load_trip)),
 ]
@@ -350,7 +396,7 @@ if pick == "Logistic":
             vol_area,
             x=DF_AREA,
             y="Total Volume",
-            title="Total Volume per Area (Bar)",
+            title=f"Total Volume per Area - {selected_month}",
             color_base=accent,
             color_highlight=accent_light,
             template=chart_template
@@ -364,7 +410,7 @@ if pick == "Logistic":
         .sum()
         .rename(columns={DF_QTY: "Total Volume"})
     )
-    fig1 = bar_desc(vol_day, DF_DATE, "Total Volume", "Total Volume / Day", accent, accent_light, chart_template)
+    fig1 = bar_desc(vol_day, DF_DATE, "Total Volume", f"Total Volume / Day - {selected_month}", accent, accent_light, chart_template)
     if fig1:
         st.plotly_chart(fig1, use_container_width=True)
 
@@ -375,7 +421,7 @@ if pick == "Logistic":
             .sum()
             .rename(columns={DF_QTY: "Actual"})
         )
-        fig3 = bar_desc(vol_plant, DF_PLNT, "Actual", "Total Volume per Plant Name", accent, accent_light, chart_template)
+        fig3 = bar_desc(vol_plant, DF_PLNT, "Actual", f"Total Volume per Plant Name - {selected_month}", accent, accent_light, chart_template)
         if fig3:
             st.plotly_chart(fig3, use_container_width=True)
 
@@ -383,17 +429,33 @@ if pick == "Logistic":
     if DF_AREA:
         avg_area = df_f.groupby(DF_AREA, as_index=False)[DF_QTY].sum()
         avg_area["Avg/Day"] = avg_area[DF_QTY] / day_span
-        fig4 = bar_desc(avg_area[[DF_AREA, "Avg/Day"]], DF_AREA, "Avg/Day", "Avg Volume / Day per Area", accent, accent_light, chart_template, is_avg=True)
+        fig4 = bar_desc(avg_area[[DF_AREA, "Avg/Day"]], DF_AREA, "Avg/Day", f"Avg Volume / Day per Area - {selected_month}", accent, accent_light, chart_template, is_avg=True)
         if fig4:
             st.plotly_chart(fig4, use_container_width=True)
+
+    # Chart Avg Volume / Month per Area
+    if DF_AREA:
+        avg_area_month = df_f.groupby(DF_AREA, as_index=False)[DF_QTY].sum()
+        avg_area_month["Avg/Bulan"] = avg_area_month[DF_QTY] / month_count
+        fig4b = bar_desc(avg_area_month[[DF_AREA, "Avg/Bulan"]], DF_AREA, "Avg/Bulan", f"Avg Volume / Bulan per Area - {selected_month}", accent, accent_light, chart_template, is_avg=True)
+        if fig4b:
+            st.plotly_chart(fig4b, use_container_width=True)
 
     # Chart Avg Volume / Day per Plant
     if DF_PLNT:
         avg_plant = df_f.groupby(DF_PLNT, as_index=False)[DF_QTY].sum()
         avg_plant["Avg/Day"] = avg_plant[DF_QTY] / day_span
-        fig5 = bar_desc(avg_plant[[DF_PLNT, "Avg/Day"]], DF_PLNT, "Avg/Day", "Avg Volume / Day per Plant Name", accent, accent_light, chart_template, is_avg=True)
+        fig5 = bar_desc(avg_plant[[DF_PLNT, "Avg/Day"]], DF_PLNT, "Avg/Day", f"Avg Volume / Day per Plant Name - {selected_month}", accent, accent_light, chart_template, is_avg=True)
         if fig5:
             st.plotly_chart(fig5, use_container_width=True)
+
+    # Chart Avg Volume / Month per Plant
+    if DF_PLNT:
+        avg_plant_month = df_f.groupby(DF_PLNT, as_index=False)[DF_QTY].sum()
+        avg_plant_month["Avg/Bulan"] = avg_plant_month[DF_QTY] / month_count
+        fig5b = bar_desc(avg_plant_month[[DF_PLNT, "Avg/Bulan"]], DF_PLNT, "Avg/Bulan", f"Avg Volume / Bulan per Plant Name - {selected_month}", accent, accent_light, chart_template, is_avg=True)
+        if fig5b:
+            st.plotly_chart(fig5b, use_container_width=True)
 
     # Truck Utilization
     st.markdown("<div class='subtitle'>🚛 Truck Utilization</div>", unsafe_allow_html=True)
@@ -403,7 +465,7 @@ if pick == "Logistic":
             .sum()
             .rename(columns={DF_QTY: "Total Volume"})
         )
-        fig6 = bar_desc(truck_vol, DF_TRCK, "Total Volume", "Total Volume per Truck", accent, accent_light, chart_template)
+        fig6 = bar_desc(truck_vol, DF_TRCK, "Total Volume", f"Total Volume per Truck - {selected_month}", accent, accent_light, chart_template)
         if fig6:
             st.plotly_chart(fig6, use_container_width=True)
 
@@ -412,13 +474,13 @@ if pick == "Logistic":
             .nunique()
             .rename(columns={DF_TRIP: "Total Trip"})
         )
-        fig7 = bar_desc(trips_per_truck, DF_TRCK, "Total Trip", "Total Trip per Truck", accent, accent_light, chart_template)
+        fig7 = bar_desc(trips_per_truck, DF_TRCK, "Total Trip", f"Total Trip per Truck - {selected_month}", accent, accent_light, chart_template)
         if fig7:
             st.plotly_chart(fig7, use_container_width=True)
 
         avg_load = pd.merge(truck_vol, trips_per_truck, on=DF_TRCK, how='left')
         avg_load["Avg Load/Trip"] = np.where(avg_load["Total Trip"]>0, avg_load["Total Volume"] / avg_load["Total Trip"], 0)
-        fig8 = bar_desc(avg_load[[DF_TRCK, "Avg Load/Trip"]], DF_TRCK, "Avg Load/Trip", "Avg Load per Trip per Truck", accent, accent_light, chart_template, is_avg=True)
+        fig8 = bar_desc(avg_load[[DF_TRCK, "Avg Load/Trip"]], DF_TRCK, "Avg Load/Trip", f"Avg Load per Trip per Truck - {selected_month}", accent, accent_light, chart_template, is_avg=True)
         if fig8:
             st.plotly_chart(fig8, use_container_width=True)
     else:
@@ -435,7 +497,7 @@ if pick == "Logistic":
                 .mean()
                 .rename(columns={DF_DIST: "Avg Distance"})
             )
-            fig10 = bar_desc(dist_area, DF_AREA, "Avg Distance", "Avg Distance per Area", accent, accent_light, chart_template, is_avg=True)
+            fig10 = bar_desc(dist_area, DF_AREA, "Avg Distance", f"Avg Distance per Area - {selected_month}", accent, accent_light, chart_template, is_avg=True)
             if fig10:
                 st.plotly_chart(fig10, use_container_width=True)
         if DF_PLNT:
@@ -444,7 +506,7 @@ if pick == "Logistic":
                 .mean()
                 .rename(columns={DF_DIST: "Avg Distance"})
             )
-            fig11 = bar_desc(dist_plant, DF_PLNT, "Avg Distance", "Avg Distance per Plant", accent, accent_light, chart_template, is_avg=True)
+            fig11 = bar_desc(dist_plant, DF_PLNT, "Avg Distance", f"Avg Distance per Plant - {selected_month}", accent, accent_light, chart_template, is_avg=True)
             if fig11:
                 st.plotly_chart(fig11, use_container_width=True)
 
@@ -461,7 +523,7 @@ if pick == "Sales & End Customer":
         .sum()
         .rename(columns={DF_QTY: "Total Volume"})
     )
-    figA = bar_desc(sales, DF_SLS, "Total Volume", "Total Volume per Sales Man", accent, accent_light, chart_template)
+    figA = bar_desc(sales, DF_SLS, "Total Volume", f"Total Volume per Sales Man - {selected_month}", accent, accent_light, chart_template)
     if figA:
         st.plotly_chart(figA, use_container_width=True)
 
@@ -485,9 +547,9 @@ if pick == "Sales & End Customer":
         
         if view_option == "Top 25 Customer":
             endc = endc.head(25)
-            title = "Top 25 End Customers by Total Volume"
+            title = f"Top 25 End Customers by Total Volume - {selected_month}"
         else:
-            title = "Total Volume per End Customer Name"
+            title = f"Total Volume per End Customer Name - {selected_month}"
         
         figB = bar_desc(endc, DF_ENDC, "Total Volume", title, accent, accent_light, chart_template)
         if figB:

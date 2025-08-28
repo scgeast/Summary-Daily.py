@@ -2,254 +2,73 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
-import plotly.graph_objects as go
 from datetime import datetime
 
 st.set_page_config(page_title="🚚 Dashboard Monitoring Delivery And Sales", layout="wide")
 
-# ========== ENHANCED FUTURISTIC THEME & COLOR ==========
+# ========== THEME & COLOR ==========
 st.sidebar.header("🎨 Display Mode")
 mode = st.sidebar.radio("Pilih Mode", ["Light", "Dark"], horizontal=True)
 
 if mode == "Dark":
     chart_template = "plotly_dark"
-    base_bg = "#0a0a0f"
-    card_bg = "#0f1419"
+    base_bg = "#0b0f19"
+    card_bg = "#0f172a"
     text_color = "#FFFFFF"
     accent = "#00E5FF"       # Cyan Neon
     accent_light = "#FF00FF" # Magenta Neon
-    accent_green = "#39FF14" # Neon Green
-    accent_yellow = "#FFEA00" # Neon Yellow
-    futur_colos = ["#00E5FF", "#FF00FF", "#39FF14", "#FFEA00", "#FF4D4D", "#8A2BE2", "#00FFFF"]
+    futur_colors = ["#00E5FF", "#FF00FF", "#39FF14", "#FFEA00", "#FF4D4D"]
     font_color = "#fff"
-    grid_color = "rgba(0, 229, 255, 0.1)"
-    particle_color = "rgba(0, 229, 255, 0.3)"
 else:
     chart_template = "plotly_white"
-    base_bg = "#f0f2f6"
-    card_bg = "#ffffff"
+    base_bg = "#FFFFFF"
+    card_bg = "#F8FAFC"
     text_color = "#111827"
     accent = "#2563EB"
     accent_light = "#7C3AED"
-    accent_green = "#059669"
-    accent_yellow = "#D97706"
-    futur_colors = ["#2563EB", "#7C3AED", "#06B6D4", "#D946EF", "#F59E0B", "#8B5CF6", "#10B981"]
+    futur_colors = ["#2563EB", "#7C3AED", "#06B6D4", "#D946EF", "#F59E0B"]
     font_color = "#111827"
-    grid_color = "rgba(37, 99, 235, 0.1)"
-    particle_color = "rgba(37, 99, 235, 0.2)"
 
-# ========== ADVANCED FUTURISTIC CSS WITH ANIMATIONS ==========
+# ========== FUTURISTIC CSS ==========
 st.markdown(
     f"""
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
-      
-      /* Main Background with Animated Grid */
       .main {{
-        background: 
-          radial-gradient(circle at 25% 25%, {accent}22 0%, transparent 50%),
-          radial-gradient(circle at 75% 75%, {accent_light}22 0%, transparent 50%),
-          linear-gradient(135deg, {base_bg} 0%, #1a1a2e 50%, {base_bg} 100%);
-        color: {text_color};
-        font-family: 'Rajdhani', sans-serif;
-        position: relative;
-        overflow-x: hidden;
+        background: radial-gradient(circle at 20% 20%, {base_bg}, #1b2735, #090a0f);
+        color:{text_color};
       }}
-      
-      /* Animated Grid Overlay */
       .main::before {{
         content: "";
         position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background-image: 
-          linear-gradient({grid_color} 1px, transparent 1px),
-          linear-gradient(90deg, {grid_color} 1px, transparent 1px);
-        background-size: 50px 50px;
-        animation: gridMove 20s linear infinite;
-        z-index: 0;
-        pointer-events: none;
+        top:0;left:0;right:0;bottom:0;
+        background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                          linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+        background-size: 40px 40px;
+        z-index:0;
       }}
-      
-      /* Floating Particles */
-      .main::after {{
-        content: "";
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background-image: 
-          radial-gradient(2px 2px at 20px 30px, {particle_color}, transparent),
-          radial-gradient(2px 2px at 40px 70px, {accent_light}44, transparent),
-          radial-gradient(1px 1px at 90px 40px, {accent_green}66, transparent),
-          radial-gradient(1px 1px at 130px 80px, {accent_yellow}44, transparent);
-        background-repeat: repeat;
-        background-size: 200px 100px;
-        animation: particleFloat 15s ease-in-out infinite;
-        z-index: 0;
-        pointer-events: none;
+      h1,h2,h3,h4,.section-title {{
+        text-shadow: 0 0 8px {accent}, 0 0 16px {accent_light};
+        color:{text_color} !important;
       }}
-      
-      @keyframes gridMove {{
-        0% {{ transform: translate(0, 0); }}
-        100% {{ transform: translate(50px, 50px); }}
-      }}
-      
-      @keyframes particleFloat {{
-        0%, 100% {{ transform: translateY(0px) rotate(0deg); }}
-        50% {{ transform: translateY(-20px) rotate(180deg); }}
-      }}
-      
-      @keyframes neonPulse {{
-        0%, 100% {{ text-shadow: 0 0 5px {accent}, 0 0 10px {accent}, 0 0 15px {accent}; }}
-        50% {{ text-shadow: 0 0 10px {accent}, 0 0 20px {accent}, 0 0 30px {accent}; }}
-      }}
-      
-      @keyframes cardGlow {{
-        0%, 100% {{ box-shadow: 0 0 15px {accent}33, inset 0 0 25px {accent_light}11; }}
-        50% {{ box-shadow: 0 0 25px {accent}55, inset 0 0 35px {accent_light}22; }}
-      }}
-      
-      @keyframes borderScan {{
-        0% {{ border-image: linear-gradient(90deg, {accent} 0%, transparent 50%, transparent 100%) 1; }}
-        50% {{ border-image: linear-gradient(90deg, transparent 0%, {accent} 50%, transparent 100%) 1; }}
-        100% {{ border-image: linear-gradient(90deg, transparent 0%, transparent 50%, {accent} 100%) 1; }}
-      }}
-      
-      /* Typography */
-      h1, h2, h3, h4, .section-title {{
-        font-family: 'Orbitron', monospace !important;
-        text-shadow: 0 0 10px {accent}, 0 0 20px {accent_light};
-        color: {text_color} !important;
-        animation: neonPulse 3s ease-in-out infinite;
-        position: relative;
-        z-index: 1;
-      }}
-      
-      /* Enhanced Metric Cards */
       .metric-card {{
-        background: linear-gradient(135deg, {card_bg} 0%, {card_bg} 70%, {accent}11 100%);
-        border: 2px solid transparent;
-        border-radius: 20px;
-        padding: 20px;
-        position: relative;
-        overflow: hidden;
-        animation: cardGlow 4s ease-in-out infinite;
-        transition: all 0.3s ease;
-        z-index: 1;
+        background: linear-gradient(135deg, {card_bg} 0%, {card_bg} 70%, {accent}22 100%);
+        border: 1px solid {accent}33; border-radius: 18px; padding: 16px; 
+        box-shadow: 0 0 12px {accent}55, inset 0 0 25px {accent_light}11;
       }}
-      
-      .metric-card::before {{
-        content: "";
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: linear-gradient(45deg, {accent}11, {accent_light}11, {accent_green}11);
-        border-radius: 20px;
-        z-index: -1;
-        animation: borderScan 3s linear infinite;
-      }}
-      
-      .metric-card:hover {{
-        transform: translateY(-5px) scale(1.02);
-        box-shadow: 0 10px 30px {accent}44, inset 0 0 40px {accent_light}22;
-      }}
-      
       .metric-value {{
-        font-family: 'Orbitron', monospace !important;
-        font-size: 28px;
-        font-weight: 900;
-        color: {font_color} !important;
-        text-shadow: 0 0 8px {accent};
-        animation: neonPulse 2s ease-in-out infinite;
+        font-size: 26px; font-weight: 800; color: {font_color} !important;
+        text-shadow: 0 0 6px {accent};
       }}
-      
       .metric-label {{
-        font-family: 'Rajdhani', sans-serif !important;
-        font-size: 13px;
-        opacity: 0.9;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
+        font-size: 12px; opacity: .8; text-transform: uppercase; letter-spacing:.03em;
         color: {font_color} !important;
-        font-weight: 600;
       }}
-      
-      .section-title {{
-        font-size: 26px;
-        font-weight: 900;
-        margin: 15px 0 10px 0;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }}
-      
-      .subtitle {{
-        font-family: 'Rajdhani', sans-serif !important;
-        font-size: 18px;
-        opacity: 0.95;
-        margin: 12px 0;
-        font-weight: 600;
-        text-shadow: 0 0 5px {accent_light};
-      }}
-      
-      /* Enhanced Sidebar */
-      .css-1d391kg {{
-        background: linear-gradient(180deg, {card_bg} 0%, {base_bg} 100%);
-        border-right: 2px solid {accent}33;
-      }}
-      
-      /* Custom Scrollbar */
-      ::-webkit-scrollbar {{
-        width: 12px;
-      }}
-      ::-webkit-scrollbar-track {{
-        background: {base_bg};
-        border-radius: 10px;
-      }}
-      ::-webkit-scrollbar-thumb {{
-        background: linear-gradient(180deg, {accent}, {accent_light});
-        border-radius: 10px;
-        border: 2px solid {base_bg};
-      }}
-      ::-webkit-scrollbar-thumb:hover {{
-        background: linear-gradient(180deg, {accent_light}, {accent});
-      }}
-      
-      /* Button Enhancements */
-      .stButton > button {{
-        background: linear-gradient(45deg, {accent}, {accent_light}) !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 15px !important;
-        font-family: 'Rajdhani', sans-serif !important;
-        font-weight: 600 !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.05em !important;
-        transition: all 0.3s ease !important;
-        box-shadow: 0 5px 15px {accent}44 !important;
-      }}
-      
-      .stButton > button:hover {{
-        transform: translateY(-2px) !important;
-        box-shadow: 0 8px 25px {accent}66 !important;
-      }}
-      
-      /* Radio Button Styling */
-      .stRadio > div {{
-        background: {card_bg};
-        border-radius: 15px;
-        padding: 10px;
-        border: 1px solid {accent}33;
-      }}
-      
-      /* Expander Styling */
-      .streamlit-expanderHeader {{
-        background: linear-gradient(90deg, {card_bg}, {accent}11) !important;
-        border-radius: 10px !important;
-        border: 1px solid {accent}33 !important;
-      }}
-      
-      /* Chart Container Enhancement */
-      .js-plotly-plot {{
-        border-radius: 15px !important;
-        overflow: hidden !important;
-        box-shadow: 0 5px 20px {accent}22 !important;
-      }}
+      .section-title {{ font-size: 22px; font-weight: 800; margin: 8px 0 6px 0; }}
+      .subtitle {{ font-size: 16px; opacity:.95; margin: 8px 0 8px 0; }}
+      /* scrollbar */
+      ::-webkit-scrollbar {{ width: 10px; }}
+      ::-webkit-scrollbar-track {{ background: #0b0e17; }}
+      ::-webkit-scrollbar-thumb {{ background: linear-gradient({accent}, {accent_light}); border-radius: 10px; }}
     </style>
     """,
     unsafe_allow_html=True,
@@ -257,23 +76,9 @@ st.markdown(
 
 st.markdown(
     f"""
-    <div style='display:flex; align-items:center; justify-content:space-between; margin-bottom: 20px; position: relative; z-index: 1;'>
-      <h1 style='margin:0; color:{text_color}; font-family: "Orbitron", monospace;'>
-        🚀 FUTURISTIC DELIVERY & SALES COMMAND CENTER
-      </h1>
-      <div style='
-        background: linear-gradient(45deg, {card_bg}, {accent}22);
-        padding: 10px 20px;
-        border-radius: 15px;
-        border: 1px solid {accent}44;
-        font-family: "Orbitron", monospace;
-        font-weight: 700;
-        color: {text_color};
-        text-shadow: 0 0 5px {accent};
-        box-shadow: 0 0 15px {accent}33;
-      '
-        ⏱️ {datetime.now().strftime('%d-%m-%Y %H:%M:%S')}
-      </div>
+    <div style='display:flex; align-items:center; justify-content:space-between;'>
+      <h1 style='margin:0;color:{text_color}'>🚀 Dashboard Monitoring Delivery And Sales</h1>
+      <div style='opacity:.9;color:{text_color};font-weight:600;'>⏱️ {datetime.now().strftime('%d-%m-%Y %H:%M:%S')}</div>
     </div>
     """,
     unsafe_allow_html=True,
@@ -333,20 +138,18 @@ def bar_desc(df, x, y, title, color_base, color_highlight, template="plotly_whit
     )
 
     fig.update_layout(
-        title_font_family="Orbitron",
-        title_font_size=18,
-        title_font_color=txt_color,
         xaxis_title=None, yaxis_title=None, bargap=0.35,
         coloraxis_showscale=False,
         plot_bgcolor=bg_plot,
         paper_bgcolor=bg_paper,
-        font=dict(color=txt_color, family="Rajdhani")
+        font=dict(color=txt_color)
     )
 
     fig.update_yaxes(linecolor=accent, gridcolor=accent_light)
     fig.update_xaxes(linecolor=accent, gridcolor=accent_light)
 
     return fig
+
 
 # ---------- PIE CHART ----------
 def pie_chart(df, names, values, title):
@@ -357,12 +160,6 @@ def pie_chart(df, names, values, title):
         title=title, hole=0.35, color_discrete_sequence=futur_colors
     )
     fig.update_traces(textinfo="percent+label")
-    fig.update_layout(
-        title_font_family="Orbitron",
-        title_font_size=18,
-        title_font_color=txt_color,
-        font=dict(color=txt_color, family="Rajdhani")
-    )
     return fig
 
 # ---------- GROUP BAR CHART ----------
@@ -372,12 +169,6 @@ def group_bar(df, x, y, color, title):
     fig = px.bar(
         df, x=x, y=y, color=color, template=chart_template,
         title=title, barmode="group", color_discrete_sequence=futur_colors
-    )
-    fig.update_layout(
-        title_font_family="Orbitron",
-        title_font_size=18,
-        title_font_color=txt_color,
-        font=dict(color=txt_color, family="Rajdhani")
     )
     return fig
 
@@ -389,55 +180,14 @@ def line_chart(df, x, y, title):
         df, x=x, y=y, template=chart_template,
         title=title, markers=True, color_discrete_sequence=futur_colors
     )
-    fig.update_layout(
-        title_font_family="Orbitron",
-        title_font_size=18,
-        title_font_color=txt_color,
-        font=dict(color=txt_color, family="Rajdhani")
-    )
     return fig
 
 # ========== UPLOAD DATA DI SIDEBAR ==========
-st.sidebar.markdown(
-    f"""
-    <div style='
-        background: linear-gradient(135deg, {card_bg}, {accent}11);
-        padding: 15px;
-        border-radius: 15px;
-        border: 1px solid {accent}33;
-        margin-bottom: 20px;
-    '>
-        <h3 style='color: {font_color}; font-family: "Orbitron", monospace; margin: 0 0 10px 0;'>
-            📂 DATA UPLOAD CENTER
-        </h3>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
+st.sidebar.header("📂 Upload File Data")
 actual_file = st.sidebar.file_uploader("Upload File Actual (Excel)", type=["xlsx", "xls"])
 
 if actual_file is None:
-    s.markdown(
-        f"""
-        <div style='
-            background: linear-gradient(45deg, {accent}22, {accent_light}22);
-            padding: 30px;
-            border-radius: 20px;
-            text-align: center;
-            border: 2px solid {accent}44;
-            box-shadow: 0 0 30px {accent}33;
-        '>
-            <h2 style='color: {text_color}; font-family: "Orbitron", monospace; margin-bottom: 15px;'>
-                🛸 AWAITING DATA TRANSMISSION
-            </h2>
-            <p style='color: {text_color}; font-family: "Rajdhani", sans-serif; font-size: 18px;'>
-                Please upload your Exel file (2MB–50MB) to initialize the command center
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    st.info("Silakan upload file Actual terlebih dahulu (ukuran 2MB–50MB).")
     st.stop()
 
 # Optional: batasi ukuran file
@@ -453,6 +203,7 @@ try:
 except Exception as e:
     st.error(f"Gagal membaca file: {e}")
     st.stop()
+
 
 # Normalisasi kolom
 df = normalize_columns(df_raw)
@@ -497,8 +248,9 @@ DF_DIST = col_distance
 DF_TRCK = col_truck
 DF_ENDC = col_endcust
 
+
 # ========== FILTER DATA ==========
-with st.expander("🔍 ADVANCED FILTER CONTROL CENTER", expanded=True:
+with st.expander("🔍 Filter Data", expanded=True):
     min_d = df[DF_DATE].min().date()
     max_d = df[DF_DATE].max().date()
 
@@ -526,7 +278,7 @@ with st.expander("🔍 ADVANCED FILTER CONTROL CENTER", expanded=True:
     else:
         sel_plant = "All"
 
-    if st.button("🔄 RESET FILTERS"):
+    if st.button("🔄 Reset Filter"):
         st.experimental_rerun()
 
 # Apply filter mask
@@ -539,8 +291,9 @@ if DF_PLNT and sel_plant != "All":
 df_f = df.loc[mask].copy()
 day_span = max((end_date - start_date).days + 1, 1)
 
+
 # ========== SUMMARIZE (KPI CARDS) ==========
-st.markdown("<div class='sectin-title'>🧭 SYSTEM METRICS OVERVIEW</div>", unsafe_allow_html=True)
+st.markdown("<div class='section-title'>🧭 Summarize</div>", unsafe_allow_html=True)
 kpi_cols = st.columns(7)
 fmt0 = lambda x: f"{int(x):,}" if pd.notna(x) else "0"
 fmtN0 = lambda x: f"{x:,.0f}" if pd.notna(x) else "0"
@@ -554,12 +307,13 @@ avg_vol_day = (tot_vol / day_span) if day_span > 0 else 0
 avg_load_trip = (tot_vol / tot_trip) if tot_trip > 0 else 0
 
 kpis = [
-    ("🌍 TOTAL AREA", fmt0(tot_area)),
-    ("🏭 TOTAL PLANT", fmt0(tot_plant)),
-    ("📦 TOTAL VOLUME", fmtN0(tot_vol)),
-    ("📅 AVG VOL/DAY", fmtN0(avg_vol_day)),
-    ("🚛 TOTAL TRUCK", fmt0(tot_tru)),
-    ("🧾 TOTAL TRIP", fmt0(tot_trip   ("⚖️ AVG LOAD/TRIP", fmtN0(avg_load_trip)),
+    ("🌍 Total Area", fmt0(tot_area)),
+    ("🏭 Total Plant", fmt0(tot_plant)),
+    ("📦 Total Volume", fmtN0(tot_vol)),
+    ("📅 Avg Vol/Day", fmtN0(avg_vol_day)),
+    ("🚛 Total Truck", fmt0(tot_truck)),
+    ("🧾 Total Trip", fmt0(tot_trip)),
+    ("⚖️ Avg Load/Trip", fmtN0(avg_load_trip)),
 ]
 
 for col, (label, value) in zip(kpi_cols, kpis):
@@ -572,30 +326,19 @@ for col, (label, value) in zip(kpi_cols, kpis):
             unsafe_allow_html=True,
         )
 
-st.markdown(
-    f"""
-    <hr style='
-        border: none;
-        height: 2px;
-        background: linear-gradient(90deg, transparent, {accent}, {accent_light}, transparent);
-        margin: 30px 0;
-        box-shadow: 0 0 10px {accent}44;
-    '>
-    """, 
-    unsafe_allow_html=True
-)
+st.markdown("<hr style='opacity:.2;'>", unsafe_allow_html=True)
 
 # ========== SWITCH DASHBOARD ==========
-st.markdown("<div class='section-title'>🎛️ COMMAND CENTER SELECTION</div>", unsafe_allow_html=True)
+st.markdown("<div class='section-title'>🎛️ Pilih Dashboard</div>", unsafe_allow_html=True)
 pick = st.radio("", ["Logistic", "Sales & End Customer"], horizontal=True)
 
 # ----------------------------------------------------
 # LOGISTIC
 # ----------------------------------------------------
 if pick == "Logistic":
-    st.markdown("<div class='sectin-title'>📦 LOGISTICS COMMAND CENTER</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>📦 Logistic</div>", unsafe_allow_html=True)
 
-   # Chart: Total Volume per Area (Bar)
+    # Chart: Total Volume per Area (Bar)
     if DF_AREA:
         vol_area = (
             df_f.groupby(DF_AREA, as_index=False)[DF_QTY]
@@ -607,7 +350,7 @@ if pick == "Logistic":
             vol_area,
             x=DF_AREA,
             y="Total Volume",
-            title="🌍 TOTAL VOLUME PER AREA ANALYSIS",
+            title="Total Volume per Area (Bar)",
             color_base=accent,
             color_highlight=accent_light,
             template=chart_template
@@ -621,7 +364,7 @@ if pick == "Logistic":
         .sum()
         .rename(columns={DF_QTY: "Total Volume"})
     )
-    fig1 = bar_desc(vol_day, DF_DATE, "Total Volume", "📅 DAILY VOLUME TRACKING", accent, accent_light, chart_template)
+    fig1 = bar_desc(vol_day, DF_DATE, "Total Volume", "Total Volume / Day", accent, accent_light, chart_template)
     if fig1:
         st.plotly_chart(fig1, use_container_width=True)
 
@@ -630,17 +373,17 @@ if pick == "Logistic":
         vol_plant = (
             df_f.groupby(DF_PLNT, as_index=False)[DF_QTY]
             .sum()
-            .rename(columns={DF_QT: "Actual"})
+            .rename(columns={DF_QTY: "Actual"})
         )
-        fig3 = bar_desc(vol_plant, DF_PLNT, "Actual", "🏭 PLANT PERFORMANCE MATRIX", accent, accent_light, chart_template)
+        fig3 = bar_desc(vol_plant, DF_PLNT, "Actual", "Total Volume per Plant Name", accent, accent_light, chart_template)
         if fig3:
             st.plotly_chart(fig3, use_container_width=True)
 
-    # Chart g Volume / Day per Area
+    # Chart Avg Volume / Day per Area
     if DF_AREA:
         avg_area = df_f.groupby(DF_AREA, as_index=False)[DF_QTY].sum()
         avg_area["Avg/Day"] = avg_area[DF_QTY] / day_span
-        fig4 = bar_desc(avg_area[[DF_AREA, "Avg/Day"]], DF_AREA, "Avg/Day", "🌍 AVG VOLUME / DAY PER AREA", accent, accent_light, char_template, is_avg=True)
+        fig4 = bar_desc(avg_area[[DF_AREA, "Avg/Day"]], DF_AREA, "Avg/Day", "Avg Volume / Day per Area", accent, accent_light, chart_template, is_avg=True)
         if fig4:
             st.plotly_chart(fig4, use_container_width=True)
 
@@ -648,19 +391,19 @@ if pick == "Logistic":
     if DF_PLNT:
         avg_plant = df_f.groupby(DF_PLNT, as_index=False)[DF_QTY].sum()
         avg_plant["Avg/Day"] = avg_plant[DF_QTY] / day_span
-        fig5 = bar_desc(avg_plant[[DF_PLNT, "Avg/Day"]], DF_PLNT, "Avg/Day", "🏭 AVG VOLUME / DAY PER PLANT", accent, accent_light, chart_template, is_avg=True)
+        fig5 = bar_desc(avg_plant[[DF_PLNT, "Avg/Day"]], DF_PLNT, "Avg/Day", "Avg Volume / Day per Plant Name", accent, accent_light, chart_template, is_avg=True)
         if fig5:
-            st.plotly_chart(fig5, use_container_width=Tue)
+            st.plotly_chart(fig5, use_container_width=True)
 
     # Truck Utilization
-    st.markdown("<div class='subtitle'>🚛 TRUCK UTILIZATION MATRIX</div>", unsafe_allow_html=True)
+    st.markdown("<div class='subtitle'>🚛 Truck Utilization</div>", unsafe_allow_html=True)
     if DF_TRCK:
         truck_vol = (
             df_f.groupby(DF_TRCK, as_index=False)[DF_QTY]
             .sum()
             .rename(columns={DF_QTY: "Total Volume"})
         )
-        fig6 = bar_desc(truck_vol, DF_TRCK, "Total Volume", "🚛 TOTAL VOLUME PER TRUCK", accent, accent_light, chart_template)
+        fig6 = bar_desc(truck_vol, DF_TRCK, "Total Volume", "Total Volume per Truck", accent, accent_light, chart_template)
         if fig6:
             st.plotly_chart(fig6, use_container_width=True)
 
@@ -669,4 +412,85 @@ if pick == "Logistic":
             .nunique()
             .rename(columns={DF_TRIP: "Total Trip"})
         )
+        fig7 = bar_desc(trips_per_truck, DF_TRCK, "Total Trip", "Total Trip per Truck", accent, accent_light, chart_template)
+        if fig7:
+            st.plotly_chart(fig7, use_container_width=True)
+
+        avg_load = pd.merge(truck_vol, trips_per_truck, on=DF_TRCK, how='left')
+        avg_load["Avg Load/Trip"] = np.where(avg_load["Total Trip"]>0, avg_load["Total Volume"] / avg_load["Total Trip"], 0)
+        fig8 = bar_desc(avg_load[[DF_TRCK, "Avg Load/Trip"]], DF_TRCK, "Avg Load/Trip", "Avg Load per Trip per Truck", accent, accent_light, chart_template, is_avg=True)
+        if fig8:
+            st.plotly_chart(fig8, use_container_width=True)
+    else:
+        st.info("Kolom Truck No tidak ditemukan.")
+
+    # Distance Analysis
+    st.markdown("<div class='subtitle'>📏 Distance Analysis</div>", unsafe_allow_html=True)
+    if DF_DIST is None:
+        st.info("Kolom Distance tidak ditemukan di file.")
+    else:
+        if DF_AREA:
+            dist_area = (
+                df_f.groupby(DF_AREA, as_index=False)[DF_DIST]
+                .mean()
+                .rename(columns={DF_DIST: "Avg Distance"})
+            )
+            fig10 = bar_desc(dist_area, DF_AREA, "Avg Distance", "Avg Distance per Area", accent, accent_light, chart_template, is_avg=True)
+            if fig10:
+                st.plotly_chart(fig10, use_container_width=True)
+        if DF_PLNT:
+            dist_plant = (
+                df_f.groupby(DF_PLNT, as_index=False)[DF_DIST]
+                .mean()
+                .rename(columns={DF_DIST: "Avg Distance"})
+            )
+            fig11 = bar_desc(dist_plant, DF_PLNT, "Avg Distance", "Avg Distance per Plant", accent, accent_light, chart_template, is_avg=True)
+            if fig11:
+                st.plotly_chart(fig11, use_container_width=True)
+
+# ----------------------------------------------------
+# DASHBOARD 2: SALES & END CUSTOMER
+# ----------------------------------------------------
+if pick == "Sales & End Customer":
+    st.markdown("<div class='section-title'>💼 Sales & End Customer Performance</div>", unsafe_allow_html=True)
+
+    # Sales
+    st.markdown("<div class='subtitle'>🧑‍💼 Sales</div>", unsafe_allow_html=True)
+    sales = (
+        df_f.groupby(DF_SLS, as_index=False)[DF_QTY]
+        .sum()
+        .rename(columns={DF_QTY: "Total Volume"})
+    )
+    figA = bar_desc(sales, DF_SLS, "Total Volume", "Total Volume per Sales Man", accent, accent_light, chart_template)
+    if figA:
+        st.plotly_chart(figA, use_container_width=True)
+
+    # End Customer - Opsi pilihan
+    if DF_ENDC:
+        st.markdown("<div class='subtitle'>👥 End Customer</div>", unsafe_allow_html=True)
         
+        # Tambahkan opsi untuk memilih tampilan
+        view_option = st.radio(
+            "Tampilkan:", 
+            ["Semua Customer", "Top 25 Customer"], 
+            horizontal=True
+        )
+        
+        endc = (
+            df_f.groupby(DF_ENDC, as_index=False)[DF_QTY]
+            .sum()
+            .rename(columns={DF_QTY: "Total Volume"})
+            .sort_values("Total Volume", ascending=False)
+        )
+        
+        if view_option == "Top 25 Customer":
+            endc = endc.head(25)
+            title = "Top 25 End Customers by Total Volume"
+        else:
+            title = "Total Volume per End Customer Name"
+        
+        figB = bar_desc(endc, DF_ENDC, "Total Volume", title, accent, accent_light, chart_template)
+        if figB:
+            st.plotly_chart(figB, use_container_width=True)
+    else:
+        st.info("Kolom End Customer Name tidak ditemukan di file.")

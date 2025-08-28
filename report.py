@@ -155,12 +155,8 @@ def group_bar_monthly(df, x, y, color, title, template="plotly_white"):
     if df.empty:
         return None
     
-    # Extract month-year from date column
-    df_with_month = df.copy()
-    df_with_month['Bulan'] = df_with_month[DF_DATE].dt.to_period('M').astype(str)
-    
     fig = px.bar(
-        df_with_month, x=x, y=y, color='Bulan', template=template,
+        df, x=x, y=y, color=color, template=template,
         title=title, barmode="group", color_discrete_sequence=futur_colors
     )
     

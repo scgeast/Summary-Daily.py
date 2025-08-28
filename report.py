@@ -558,8 +558,9 @@ kpis = [
     ("🏭 TOTAL PLANT", fmt0(tot_plant)),
     ("📦 TOTAL VOLUME", fmtN0(tot_vol)),
     ("📅 AVG VOL/DAY", fmtN0(avg_vol_day)),
-    ("🚛 TOTAL TRUCK", fmt0(tot_tru)),
-    ("🧾 TOTAL TRIP", fmt0(tot_trip   ("⚖️ AVG LOAD/TRIP", fmtN0(avg_load_trip)),
+    ("🚛 TOTAL TRUCK", fmt0(tot_truck)),  # Diperbaiki: tot_tru -> tot_truck
+    ("🧾 TOTAL TRIP", fmt0(tot_trip)),    # Diperbaiki: tambahkan kurung tutup
+    ("⚖️ AVG LOAD/TRIP", fmtN0(avg_load_trip)),
 ]
 
 for col, (label, value) in zip(kpi_cols, kpis):

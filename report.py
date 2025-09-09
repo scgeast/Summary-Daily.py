@@ -6,101 +6,69 @@ from datetime import datetime
 
 st.set_page_config(page_title="🚚 Dashboard Monitoring Delivery And Sales", layout="wide")
 
-# ========== NEW THEME BASED ON IMAGE ==========
-# Using colors inspired by the example image
+# ========== THEME & COLOR ==========
 st.sidebar.header("🎨 Display Mode")
 mode = st.sidebar.radio("Pilih Mode", ["Light", "Dark"], horizontal=True)
 
 if mode == "Dark":
     chart_template = "plotly_dark"
-    base_bg = "#1a1a2e"  # Dark blue background
-    card_bg = "#16213e"  # Slightly lighter dark blue
+    base_bg = "#0b0f19"
+    card_bg = "#0f172a"
     text_color = "#FFFFFF"
-    accent = "#0fccce"   # Cyan accent from image
-    accent_light = "#00adb5" # Lighter cyan
-    futur_colors = ["#0fccce", "#00adb5", "#ff5722", "#ff9a3c", "#e84545"]
+    accent = "#00E5FF"       # Cyan Neon
+    accent_light = "#FF00FF" # Magenta Neon
+    futur_colors = ["#00E5FF", "#FF00FF", "#39FF14", "#FFEA00", "#FF4D4D"]
     font_color = "#fff"
 else:
     chart_template = "plotly_white"
-    base_bg = "#f0f5f9"  # Light blue-gray background
-    card_bg = "#ffffff"  # White cards
-    text_color = "#222831"  # Dark text
-    accent = "#0fccce"   # Cyan accent from image
-    accent_light = "#00adb5" # Lighter cyan
-    futur_colors = ["#0fccce", "#00adb5", "#ff5722", "#ff9a3c", "#e84545"]
-    font_color = "#222831"
+    base_bg = "#FFFFFF"
+    card_bg = "#F8FAFC"
+    text_color = "#111827"
+    accent = "#2563EB"
+    accent_light = "#7C3AED"
+    futur_colors = ["#2563EB", "#7C3AED", "#06B6D4", "#D946EF", "#F59E0B"]
+    font_color = "#111827"
 
-# ========== UPDATED CSS WITH IMAGE-INSPIRED STYLING ==========
+# ========== FUTURISTIC CSS ==========
 st.markdown(
     f"""
     <style>
       .main {{
-        background-color: {base_bg};
-        color: {text_color};
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: radial-gradient(circle at 20% 20%, {base_bg}, #1b2735, #090a0f);
+        color:{text_color};
       }}
-      h1, h2, h3, h4, .section-title {{
-        color: {text_color} !important;
-        font-weight: 600;
-        border-left: 4px solid {accent};
-        padding-left: 10px;
+      .main::before {{
+        content: "";
+        position: fixed;
+        top:0;left:0;right:0;bottom:0;
+        background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                          linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+        background-size: 40px 40px;
+        z-index:0;
+      }}
+      h1,h2,h3,h4,.section-title {{
+        text-shadow: 0 0 8px {accent}, 0 0 16px {accent_light};
+        color:{text_color} !important;
       }}
       .metric-card {{
-        background-color: {card_bg};
-        border-radius: 8px;
-        padding: 15px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        border-top: 3px solid {accent};
+        background: linear-gradient(135deg, {card_bg} 0%, {card_bg} 70%, {accent}22 100%);
+        border: 1px solid {accent}33; border-radius: 18px; padding: 16px; 
+        box-shadow: 0 0 12px {accent}55, inset 0 0 25px {accent_light}11;
       }}
       .metric-value {{
-        font-size: 24px;
-        font-weight: 700;
-        color: {accent} !important;
+        font-size: 26px; font-weight: 800; color: {font_color} !important;
+        text-shadow: 0 0 6px {accent};
       }}
       .metric-label {{
-        font-size: 12px;
-        color: {text_color} !important;
-        opacity: 0.8;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        font-size: 12px; opacity: .8; text-transform: uppercase; letter-spacing:.03em;
+        color: {font_color} !important;
       }}
-      .city-card {{
-        background-color: {card_bg};
-        border-radius: 8px;
-        padding: 15px;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        border-left: 3px solid {accent};
-      }}
-      .progress-container {{
-        background: rgba(15, 204, 206, 0.2);
-        border-radius: 5px;
-        height: 20px;
-        margin: 10px 0;
-        overflow: hidden;
-      }}
-      .progress-bar {{
-        height: 100%;
-        border-radius: 5px;
-        background: {accent};
-        text-align: center;
-        line-height: 20px;
-        color: white;
-        font-weight: bold;
-        font-size: 12px;
-      }}
-      /* Styling for data upload section */
-      .stExpander {{
-        background-color: {card_bg};
-        border-radius: 8px;
-        border: 1px solid rgba(15, 204, 206, 0.3);
-      }}
-      /* Radio button styling */
-      .stRadio > div {{
-        background-color: {card_bg};
-        padding: 10px;
-        border-radius: 8px;
-      }}
+      .section-title {{ font-size: 22px; font-weight: 800; margin: 8px 0 6px 0; }}
+      .subtitle {{ font-size: 16px; opacity:.95; margin: 8px 0 8px 0; }}
+      /* scrollbar */
+      ::-webkit-scrollbar {{ width: 10px; }}
+      ::-webkit-scrollbar-track {{ background: #0b0e17; }}
+      ::-webkit-scrollbar-thumb {{ background: linear-gradient({accent}, {accent_light}); border-radius: 10px; }}
     </style>
     """,
     unsafe_allow_html=True,
@@ -109,14 +77,14 @@ st.markdown(
 st.markdown(
     f"""
     <div style='display:flex; align-items:center; justify-content:space-between;'>
-      <h1 style='margin:0;color:{text_color}'>🚚 Dashboard Monitoring Delivery And Sales</h1>
+      <h1 style='margin:0;color:{text_color}'>🚀 Dashboard Monitoring Delivery And Sales</h1>
       <div style='opacity:.9;color:{text_color};font-weight:600;'>⏱️ {datetime.now().strftime('%d-%m-%Y %H:%M:%S')}</div>
     </div>
     """,
     unsafe_allow_html=True,
 )
 
-# ========== HELPER FUNCTIONS (SAME AS BEFORE) ==========
+# ========== HELPER ==========
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
     out.columns = (
@@ -141,15 +109,15 @@ def match_col(df: pd.DataFrame, candidates: list[str]) -> str | None:
 
 # Tentukan warna background sesuai mode
 if mode == "Dark":
-    bg_plot = "rgba(26, 26, 46, 0.9)"
-    bg_paper = "rgba(22, 33, 62, 1)"
+    bg_plot = "rgba(10,10,30,0.9)"
+    bg_paper = "rgba(5,5,20,1)"
     txt_color = "white"
 else:  # Light mode
     bg_plot = "white"
     bg_paper = "white"
-    txt_color = "#222831"
+    txt_color = "black"
 
-# ---------- CHART FUNCTIONS (SAME AS BEFORE) ----------
+# ---------- BAR CHART ----------
 def bar_desc(df, x, y, title, color_base, color_highlight, template="plotly_white", is_avg=False):
     if df.empty:
         return None
@@ -159,7 +127,7 @@ def bar_desc(df, x, y, title, color_base, color_highlight, template="plotly_whit
 
     fig = px.bar(
         data, x=x, y=y, template=template, title=title,
-        color=data[y], color_continuous_scale=[color_base, color_highlight]
+        color=data[y], color_continuous_scale=futur_colors
     )
 
     label_fmt = ",.0f" if not is_avg else ".2f"
@@ -177,33 +145,40 @@ def bar_desc(df, x, y, title, color_base, color_highlight, template="plotly_whit
         font=dict(color=txt_color)
     )
 
+    fig.update_yaxes(linecolor=accent, gridcolor=accent_light)
+    fig.update_xaxes(linecolor=accent, gridcolor=accent_light)
+
     return fig
 
+
+# ---------- PIE CHART ----------
 def pie_chart(df, names, values, title):
     if df.empty:
         return None
     fig = px.pie(
         df, names=names, values=values, template=chart_template,
-        title=title, hole=0.35, color_discrete_sequence=[accent, accent_light]
+        title=title, hole=0.35, color_discrete_sequence=futur_colors
     )
     fig.update_traces(textinfo="percent+label")
     return fig
 
+# ---------- GROUP BAR CHART ----------
 def group_bar(df, x, y, color, title):
     if df.empty:
         return None
     fig = px.bar(
         df, x=x, y=y, color=color, template=chart_template,
-        title=title, barmode="group", color_discrete_sequence=[accent, accent_light]
+        title=title, barmode="group", color_discrete_sequence=futur_colors
     )
     return fig
 
+# ---------- LINE CHART ----------
 def line_chart(df, x, y, title):
     if df.empty:
         return None
     fig = px.line(
         df, x=x, y=y, template=chart_template,
-        title=title, markers=True, color_discrete_sequence=[accent]
+        title=title, markers=True, color_discrete_sequence=futur_colors
     )
     return fig
 
@@ -212,12 +187,12 @@ st.sidebar.header("📂 Upload File Data")
 actual_file = st.sidebar.file_uploader("Upload File Actual (Excel)", type=["xlsx", "xls"])
 
 if actual_file is None:
-    st.info("Silakan upload file Actual terlebih dahulu (ukuran 0.5MB–50MB).")
+    st.info("Silakan upload file Actual terlebih dahulu (ukuran 2MB–50MB).")
     st.stop()
 
 # Optional: batasi ukuran file
 size_mb = actual_file.size / (1024 * 1024)
-if size_mb < 0.5 or size_mb > 50:
+if size_mb < 2 or size_mb > 50:
     st.error("⚠️ File harus berukuran antara 2MB - 50MB")
     st.stop()
 
@@ -228,6 +203,7 @@ try:
 except Exception as e:
     st.error(f"Gagal membaca file: {e}")
     st.stop()
+
 
 # Normalisasi kolom
 df = normalize_columns(df_raw)
@@ -272,6 +248,7 @@ DF_DIST = col_distance
 DF_TRCK = col_truck
 DF_ENDC = col_endcust
 
+
 # ========== FILTER DATA ==========
 with st.expander("🔍 Filter Data", expanded=True):
     min_d = df[DF_DATE].min().date()
@@ -313,6 +290,7 @@ if DF_PLNT and sel_plant != "All":
 
 df_f = df.loc[mask].copy()
 day_span = max((end_date - start_date).days + 1, 1)
+
 
 # ========== SUMMARIZE (KPI CARDS) ==========
 st.markdown("<div class='section-title'>🧭 Summarize</div>", unsafe_allow_html=True)

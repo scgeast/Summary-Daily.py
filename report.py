@@ -29,7 +29,7 @@ else:
     futur_colors = ["#2563EB", "#7C3AED", "#06B6D4", "#D946EF", "#F59E0B"]
     font_color = "#111827"
 
-# ========== FUTURISTIC CSS ==========
+# ========== UPDATED CSS - REMOVED SPECIAL EFFECTS ON TITLES ==========
 st.markdown(
     f"""
     <style>
@@ -47,8 +47,8 @@ st.markdown(
         z-index:0;
       }}
       h1,h2,h3,h4,.section-title {{
-        text-shadow: 0 0 8px {accent}, 0 0 16px {accent_light};
         color:{text_color} !important;
+        font-weight: bold;
       }}
       .metric-card {{
         background: linear-gradient(135deg, {card_bg} 0%, {card_bg} 70%, {accent}22 100%);
@@ -57,7 +57,6 @@ st.markdown(
       }}
       .metric-value {{
         font-size: 26px; font-weight: 800; color: {font_color} !important;
-        text-shadow: 0 0 6px {accent};
       }}
       .metric-label {{
         font-size: 12px; opacity: .8; text-transform: uppercase; letter-spacing:.03em;
@@ -187,12 +186,12 @@ st.sidebar.header("📂 Upload File Data")
 actual_file = st.sidebar.file_uploader("Upload File Actual (Excel)", type=["xlsx", "xls"])
 
 if actual_file is None:
-    st.info("Silakan upload file Actual terlebih dahulu (ukuran 0.2MB–50MB).")
+    st.info("Silakan upload file Actual terlebih dahulu (ukuran 2MB–50MB).")
     st.stop()
 
 # Optional: batasi ukuran file
 size_mb = actual_file.size / (1024 * 1024)
-if size_mb < 0.2 or size_mb > 50:
+if size_mb < 2 or size_mb > 50:
     st.error("⚠️ File harus berukuran antara 2MB - 50MB")
     st.stop()
 

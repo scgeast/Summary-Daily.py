@@ -1,68 +1,8 @@
-[file name]: image.png
-[file content begin]
-# Daily Delivery Monitoring
-
-## Create List Order
-- Total city order 2025 m³  
-- Total Plant 2  
-
-## List Order
-- Total city Delivery 1361 m³  
-- Total City Remains 193 m³  
-- Total City Cancell 471 m³  
-- Total Project Remain 3  
-
----
-
-### Qty Delivery by Status
-- Pending Delivered  
-- Canceled  
-
----
-
-### Plant Performance
-- City Order  
-- City Delivery  
-- City Remains  
-
----
-
-### Qty Order Per Day
-- City Order Per Day  
-- City Order Per Day  
-
----
-
-### Daily Delivery Summary
-- **Daily Delivery Denpasar**  
-- Volume order: 1455 M3  
-- Volume Delivered: 100 M3  
-- Volume Remain: 103 M3  
-- Project Remain: 1  
-
----
-
-### Daily Delivery Glanyar
-- Volume order: 570 M3  
-- Volume Delivered: 263 M3  
-- Volume Remain: 90 M3  
-- Project Remain: 2  
-
----
-
-### Prosentase Pencapalian: 76%  
-- Prosentase Pencapalian: 46%
-
-
-[file content end]
-
 import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
 from datetime import datetime
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 
 st.set_page_config(page_title="🚚 Dashboard Monitoring Delivery And Sales", layout="wide")
 
@@ -123,31 +63,8 @@ st.markdown(
         font-size: 12px; opacity: .8; text-transform: uppercase; letter-spacing:.03em;
         color: {font_color} !important;
       }}
-      .progress-container {{
-        background: rgba(255,255,255,0.1); 
-        border-radius: 10px; 
-        height: 20px; 
-        margin: 10px 0;
-        overflow: hidden;
-      }}
-      .progress-bar {{
-        height: 100%;
-        border-radius: 10px;
-        background: linear-gradient(90deg, {accent}, {accent_light});
-        text-align: center;
-        line-height: 20px;
-        color: white;
-        font-weight: bold;
-        font-size: 12px;
-      }}
       .section-title {{ font-size: 22px; font-weight: 800; margin: 8px 0 6px 0; }}
       .subtitle {{ font-size: 16px; opacity:.95; margin: 8px 0 8px 0; }}
-      .city-card {{
-        background: linear-gradient(135deg, {card_bg} 0%, {card_bg} 70%, {accent}22 100%);
-        border: 1px solid {accent}33; border-radius: 18px; padding: 16px; 
-        box-shadow: 0 0 12px {accent}55, inset 0 0 25px {accent_light}11;
-        margin-bottom: 20px;
-      }}
       /* scrollbar */
       ::-webkit-scrollbar {{ width: 10px; }}
       ::-webkit-scrollbar-track {{ background: #0b0e17; }}
@@ -270,12 +187,12 @@ st.sidebar.header("📂 Upload File Data")
 actual_file = st.sidebar.file_uploader("Upload File Actual (Excel)", type=["xlsx", "xls"])
 
 if actual_file is None:
-    st.info("Silakan upload file Actual terlebih dahulu (ukuran 0.5MB–50MB).")
+    st.info("Silakan upload file Actual terlebih dahulu (ukuran 2MB–50MB).")
     st.stop()
 
 # Optional: batasi ukuran file
 size_mb = actual_file.size / (1024 * 1024)
-if size_mb < 0.5 or size_mb > 50:
+if size_mb < 2 or size_mb > 50:
     st.error("⚠️ File harus berukuran antara 2MB - 50MB")
     st.stop()
 
@@ -352,7 +269,7 @@ with st.expander("🔍 Filter Data", expanded=True):
     if DF_PLNT:
         if DF_AREA and sel_area != "All":
             plants = ["All"] + sorted(
-                df[df[DF_AREA].ast(str) == str(sel_area)][DF_PLNT]
+                df[df[DF_AREA].astype(str) == str(sel_area)][DF_PLNT]
                 .dropna().astype(str).unique().tolist()
             )
         else:
@@ -411,231 +328,169 @@ for col, (label, value) in zip(kpi_cols, kpis):
 
 st.markdown("<hr style='opacity:.2;'>", unsafe_allow_html=True)
 
-# ========== DASHBOARD LAYOUT INSPIRED BY IMAGE ==========
-st.markdown("<div class='section-title'>📊 Delivery Monitoring Dashboard</div>", unsafe_allow_html=True)
+# ========== SWITCH DASHBOARD ==========
+st.markdown("<div class='section-title'>🎛️ Pilih Dashboard</div>", unsafe_allow_html=True)
+pick = st.radio("", ["Logistic", "Sales & End Customer"], horizontal=True)
 
-# Create List Order Section
-col1, col2 = st.columns(2)
+# ----------------------------------------------------
+# LOGISTIC
+# ----------------------------------------------------
+if pick == "Logistic":
+    st.markdown("<div class='section-title'>📦 Logistic</div>", unsafe_allow_html=True)
 
-with col1:
-    st.markdown("<div class='section-title'>📋 Create List Order</div>", unsafe_allow_html=True)
-    
-    # Create metrics for list order
-    total_city_order = 2025
-    total_plant = 2
-    
-    st.markdown(
-        f"""
-        <div class='metric-card'>
-            <div class='metric-label'>Total City Order</div>
-            <div class='metric-value'>{total_city_order:,} m³</div>
-        </div>
-        """,
-        unsafe_allow_html=True
+    # Chart: Total Volume per Area (Bar)
+    if DF_AREA:
+        vol_area = (
+            df_f.groupby(DF_AREA, as_index=False)[DF_QTY]
+            .sum()
+            .rename(columns={DF_QTY: "Total Volume"})
+            .sort_values("Total Volume", ascending=False)
+        )
+        fig2 = bar_desc(
+            vol_area,
+            x=DF_AREA,
+            y="Total Volume",
+            title="Total Volume per Area (Bar)",
+            color_base=accent,
+            color_highlight=accent_light,
+            template=chart_template
+        )
+        if fig2:
+            st.plotly_chart(fig2, use_container_width=True)
+
+    # Chart: Total Volume / Day
+    vol_day = (
+        df_f.groupby(DF_DATE, as_index=False)[DF_QTY]
+        .sum()
+        .rename(columns={DF_QTY: "Total Volume"})
     )
-    
-    st.markdown(
-        f"""
-        <div class='metric-card'>
-            <div class='metric-label'>Total Plant</div>
-            <div class='metric-value'>{total_plant}</div>
-        </div>
-        """,
-        unsafe_allow_html=True
+    fig1 = bar_desc(vol_day, DF_DATE, "Total Volume", "Total Volume / Day", accent, accent_light, chart_template)
+    if fig1:
+        st.plotly_chart(fig1, use_container_width=True)
+
+    # Chart Volume per Plant
+    if DF_PLNT:
+        vol_plant = (
+            df_f.groupby(DF_PLNT, as_index=False)[DF_QTY]
+            .sum()
+            .rename(columns={DF_QTY: "Actual"})
+        )
+        fig3 = bar_desc(vol_plant, DF_PLNT, "Actual", "Total Volume per Plant Name", accent, accent_light, chart_template)
+        if fig3:
+            st.plotly_chart(fig3, use_container_width=True)
+
+    # Chart Avg Volume / Day per Area
+    if DF_AREA:
+        avg_area = df_f.groupby(DF_AREA, as_index=False)[DF_QTY].sum()
+        avg_area["Avg/Day"] = avg_area[DF_QTY] / day_span
+        fig4 = bar_desc(avg_area[[DF_AREA, "Avg/Day"]], DF_AREA, "Avg/Day", "Avg Volume / Day per Area", accent, accent_light, chart_template, is_avg=True)
+        if fig4:
+            st.plotly_chart(fig4, use_container_width=True)
+
+    # Chart Avg Volume / Day per Plant
+    if DF_PLNT:
+        avg_plant = df_f.groupby(DF_PLNT, as_index=False)[DF_QTY].sum()
+        avg_plant["Avg/Day"] = avg_plant[DF_QTY] / day_span
+        fig5 = bar_desc(avg_plant[[DF_PLNT, "Avg/Day"]], DF_PLNT, "Avg/Day", "Avg Volume / Day per Plant Name", accent, accent_light, chart_template, is_avg=True)
+        if fig5:
+            st.plotly_chart(fig5, use_container_width=True)
+
+    # Truck Utilization
+    st.markdown("<div class='subtitle'>🚛 Truck Utilization</div>", unsafe_allow_html=True)
+    if DF_TRCK:
+        truck_vol = (
+            df_f.groupby(DF_TRCK, as_index=False)[DF_QTY]
+            .sum()
+            .rename(columns={DF_QTY: "Total Volume"})
+        )
+        fig6 = bar_desc(truck_vol, DF_TRCK, "Total Volume", "Total Volume per Truck", accent, accent_light, chart_template)
+        if fig6:
+            st.plotly_chart(fig6, use_container_width=True)
+
+        trips_per_truck = (
+            df_f.groupby(DF_TRCK, as_index=False)[DF_TRIP]
+            .nunique()
+            .rename(columns={DF_TRIP: "Total Trip"})
+        )
+        fig7 = bar_desc(trips_per_truck, DF_TRCK, "Total Trip", "Total Trip per Truck", accent, accent_light, chart_template)
+        if fig7:
+            st.plotly_chart(fig7, use_container_width=True)
+
+        avg_load = pd.merge(truck_vol, trips_per_truck, on=DF_TRCK, how='left')
+        avg_load["Avg Load/Trip"] = np.where(avg_load["Total Trip"]>0, avg_load["Total Volume"] / avg_load["Total Trip"], 0)
+        fig8 = bar_desc(avg_load[[DF_TRCK, "Avg Load/Trip"]], DF_TRCK, "Avg Load/Trip", "Avg Load per Trip per Truck", accent, accent_light, chart_template, is_avg=True)
+        if fig8:
+            st.plotly_chart(fig8, use_container_width=True)
+    else:
+        st.info("Kolom Truck No tidak ditemukan.")
+
+    # Distance Analysis
+    st.markdown("<div class='subtitle'>📏 Distance Analysis</div>", unsafe_allow_html=True)
+    if DF_DIST is None:
+        st.info("Kolom Distance tidak ditemukan di file.")
+    else:
+        if DF_AREA:
+            dist_area = (
+                df_f.groupby(DF_AREA, as_index=False)[DF_DIST]
+                .mean()
+                .rename(columns={DF_DIST: "Avg Distance"})
+            )
+            fig10 = bar_desc(dist_area, DF_AREA, "Avg Distance", "Avg Distance per Area", accent, accent_light, chart_template, is_avg=True)
+            if fig10:
+                st.plotly_chart(fig10, use_container_width=True)
+        if DF_PLNT:
+            dist_plant = (
+                df_f.groupby(DF_PLNT, as_index=False)[DF_DIST]
+                .mean()
+                .rename(columns={DF_DIST: "Avg Distance"})
+            )
+            fig11 = bar_desc(dist_plant, DF_PLNT, "Avg Distance", "Avg Distance per Plant", accent, accent_light, chart_template, is_avg=True)
+            if fig11:
+                st.plotly_chart(fig11, use_container_width=True)
+
+# ----------------------------------------------------
+# DASHBOARD 2: SALES & END CUSTOMER
+# ----------------------------------------------------
+if pick == "Sales & End Customer":
+    st.markdown("<div class='section-title'>💼 Sales & End Customer Performance</div>", unsafe_allow_html=True)
+
+    # Sales
+    st.markdown("<div class='subtitle'>🧑‍💼 Sales</div>", unsafe_allow_html=True)
+    sales = (
+        df_f.groupby(DF_SLS, as_index=False)[DF_QTY]
+        .sum()
+        .rename(columns={DF_QTY: "Total Volume"})
     )
+    figA = bar_desc(sales, DF_SLS, "Total Volume", "Total Volume per Sales Man", accent, accent_light, chart_template)
+    if figA:
+        st.plotly_chart(figA, use_container_width=True)
 
-with col2:
-    st.markdown("<div class='section-title'>📝 List Order</div>", unsafe_allow_html=True)
-    
-    # Create metrics for list order details
-    total_city_delivery = 1361
-    total_city_remains = 193
-    total_city_cancel = 471
-    total_project_remain = 3
-    
-    st.markdown(
-        f"""
-        <div class='metric-card'>
-            <div class='metric-label'>Total City Delivery</div>
-            <div class='metric-value'>{total_city_delivery:,} m³</div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    
-    st.markdown(
-        f"""
-        <div class='metric-card'>
-            <div class='metric-label'>Total City Remains</div>
-            <div class='metric-value'>{total_city_remains:,} m³</div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    
-    st.markdown(
-        f"""
-        <div class='metric-card'>
-            <div class='metric-label'>Total City Cancel</div>
-            <div class='metric-value'>{total_city_cancel:,} m³</div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    
-    st.markdown(
-        f"""
-        <div class='metric-card'>
-            <div class='metric-label'>Total Project Remain</div>
-            <div class='metric-value'>{total_project_remain}</div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-# Qty Delivery by Status Section
-st.markdown("<div class='section-title'>📦 Qty Delivery by Status</div>", unsafe_allow_html=True)
-
-status_col1, status_col2 = st.columns(2)
-
-with status_col1:
-    # Create a pie chart for delivery status
-    status_data = pd.DataFrame({
-        'Status': ['Delivered', 'Pending', 'Canceled'],
-        'Value': [70, 20, 10]
-    })
-    
-    fig_status = px.pie(status_data, values='Value', names='Status', 
-                        title='Delivery Status Distribution',
-                        color_discrete_sequence=futur_colors)
-    fig_status.update_traces(textposition='inside', textinfo='percent+label')
-    st.plotly_chart(fig_status, use_container_width=True)
-
-with status_col2:
-    # Create metrics for delivery status
-    st.markdown(
-        f"""
-        <div class='metric-card'>
-            <div class='metric-label'>Pending Delivered</div>
-            <div class='metric-value'>20%</div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    
-    st.markdown(
-        f"""
-        <div class='metric-card'>
-            <div class='metric-label'>Canceled</div>
-            <div class='metric-value'>10%</div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-# Plant Performance Section
-st.markdown("<div class='section-title'>🏭 Plant Performance</div>", unsafe_allow_html=True)
-
-plant_data = pd.DataFrame({
-    'Plant': ['Plant A', 'Plant B', 'Plant C'],
-    'City Order': [1000, 800, 600],
-    'City Delivery': [800, 650, 500],
-    'City Remains': [200, 150, 100]
-})
-
-fig_plant = px.bar(plant_data, x='Plant', y=['City Order', 'City Delivery', 'City Remains'],
-                   title='Plant Performance Metrics', barmode='group',
-                   color_discrete_sequence=futur_colors)
-st.plotly_chart(fig_plant, use_container_width=True)
-
-# Qty Order Per Day Section
-st.markdown("<div class='section-title'>📅 Qty Order Per Day</div>", unsafe_allow_html=True)
-
-# Generate sample daily data
-dates = pd.date_range(start=datetime.now().date() - pd.Timedelta(days=7), 
-                      end=datetime.now().date(), freq='D')
-daily_data = pd.DataFrame({
-    'Date': dates,
-    'City Order Per Day': np.random.randint(100, 300, size=len(dates))
-})
-
-fig_daily = px.line(daily_data, x='Date', y='City Order Per Day',
-                    title='Daily City Orders', markers=True,
-                    color_discrete_sequence=[futur_colors[0]])
-st.plotly_chart(fig_daily, use_container_width=True)
-
-# Daily Delivery Summary Section
-st.markdown("<div class='section-title'>🚚 Daily Delivery Summary</div>", unsafe_allow_html=True)
-
-delivery_col1, delivery_col2 = st.columns(2)
-
-with delivery_col1:
-    st.markdown("<div class='city-card'>", unsafe_allow_html=True)
-    st.markdown("**Daily Delivery Denpasar**")
-    
-    denpasar_order = 1455
-    denpasar_delivered = 100
-    denpasar_remain = 103
-    denpasar_project_remain = 1
-    denpasar_completion = (denpasar_delivered / denpasar_order) * 100 if denpasar_order > 0 else 0
-    
-    st.markdown(f"Volume order: {denpasar_order} M3")
-    st.markdown(f"Volume Delivered: {denpasar_delivered} M3")
-    st.markdown(f"Volume Remain: {denpasar_remain} M3")
-    st.markdown(f"Project Remain: {denpasar_project_remain}")
-    
-    # Progress bar
-    st.markdown(f"<div class='progress-container'><div class='progress-bar' style='width: {denpasar_completion}%'>{denpasar_completion:.1f}%</div></div>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-
-with delivery_col2:
-    st.markdown("<div class='city-card'>", unsafe_allow_html=True)
-    st.markdown("**Daily Delivery Glanyar**")
-    
-    glanyar_order = 570
-    glanyar_delivered = 263
-    glanyar_remain = 90
-    glanyar_project_remain = 2
-    glanyar_completion = (glanyar_delivered / glanyar_order) * 100 if glanyar_order > 0 else 0
-    
-    st.markdown(f"Volume order: {glanyar_order} M3")
-    st.markdown(f"Volume Delivered: {glanyar_delivered} M3")
-    st.markdown(f"Volume Remain: {glanyar_remain} M3")
-    st.markdown(f"Project Remain: {glanyar_project_remain}")
-    
-    # Progress bar
-    st.markdown(f"<div class='progress-container'><div class='progress-bar' style='width: {glanyar_completion}%'>{glanyar_completion:.1f}%</div></div>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-
-# Completion Percentage Section
-st.markdown("<div class='section-title'>📊 Prosentase Pencapaian</div>", unsafe_allow_html=True)
-
-comp_col1, comp_col2 = st.columns(2)
-
-with comp_col1:
-    completion_1 = 76
-    st.markdown(
-        f"""
-        <div class='metric-card'>
-            <div class='metric-label'>Prosentase Pencapaian</div>
-            <div class='progress-container' style='margin-top: 10px;'>
-                <div class='progress-bar' style='width: {completion_1}%'>{completion_1}%</div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-with comp_col2:
-    completion_2 = 46
-    st.markdown(
-        f"""
-        <div class='metric-card'>
-            <div class='metric-label'>Prosentase Pencapaian</div>
-            <div class='progress-container' style='margin-top: 10px;'>
-                <div class='progress-bar' style='width: {completion_2}%'>{completion_2}%</div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    # End Customer - Opsi pilihan
+    if DF_ENDC:
+        st.markdown("<div class='subtitle'>👥 End Customer</div>", unsafe_allow_html=True)
+        
+        # Tambahkan opsi untuk memilih tampilan
+        view_option = st.radio(
+            "Tampilkan:", 
+            ["Semua Customer", "Top 25 Customer"], 
+            horizontal=True
+        )
+        
+        endc = (
+            df_f.groupby(DF_ENDC, as_index=False)[DF_QTY]
+            .sum()
+            .rename(columns={DF_QTY: "Total Volume"})
+            .sort_values("Total Volume", ascending=False)
+        )
+        
+        if view_option == "Top 25 Customer":
+            endc = endc.head(25)
+            title = "Top 25 End Customers by Total Volume"
+        else:
+            title = "Total Volume per End Customer Name"
+        
+        figB = bar_desc(endc, DF_ENDC, "Total Volume", title, accent, accent_light, chart_template)
+        if figB:
+            st.plotly_chart(figB, use_container_width=True)
+    else:
+        st.info("Kolom End Customer Name tidak ditemukan di file.")

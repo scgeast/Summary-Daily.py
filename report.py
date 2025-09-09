@@ -15,8 +15,8 @@ if mode == "Dark":
     base_bg = "#0b0f19"
     card_bg = "#0f172a"
     text_color = "#FFFFFF"
-    accent = "#00E5FF"       # Cyan Neon
-    accent_light = "#FF00FF" # Magenta Neon
+    accent = "#00E5FF"       # Cyan
+    accent_light = "#FF00FF" # Magenta
     futur_colors = ["#00E5FF", "#FF00FF", "#39FF14", "#FFEA00", "#FF4D4D"]
     font_color = "#fff"
 else:

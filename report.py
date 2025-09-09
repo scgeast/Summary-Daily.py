@@ -187,12 +187,12 @@ st.sidebar.header("📂 Upload File Data")
 actual_file = st.sidebar.file_uploader("Upload File Actual (Excel)", type=["xlsx", "xls"])
 
 if actual_file is None:
-    st.info("Silakan upload file Actual terlebih dahulu (ukuran 2MB–50MB).")
+    st.info("Silakan upload file Actual terlebih dahulu (ukuran 0.5MB–50MB).")
     st.stop()
 
 # Optional: batasi ukuran file
 size_mb = actual_file.size / (1024 * 1024)
-if size_mb < 2 or size_mb > 50:
+if size_mb < 0.5 or size_mb > 50:
     st.error("⚠️ File harus berukuran antara 2MB - 50MB")
     st.stop()
 

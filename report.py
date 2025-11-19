@@ -175,19 +175,19 @@ def bar_with_target_line(df, x, y_actual, y_target, title, template="plotly_whit
         name='Target',
         mode='lines+markers+text',
         line=dict(
-            color='#8B0000',  # Warna Blood Moon (Dark Red)
+            color='#DC143C',  # Warna Blood Moon (Dark Red)
             width=3,
             dash='dash'  # Garis putus-putus
         ),
         marker=dict(
             size=8,
-            color='#8B0000',  # Warna Blood Moon
+            color='#DC143C',  # Warna Blood Moon
             symbol='circle'
         ),
         text=df[y_target].apply(lambda x: f"{x:,.0f}"),
         textposition='top center',
         textfont=dict(
-            color='#8B0000',  # Warna Blood Moon
+            color='#DC143C',  # Warna Blood Moon
             size=12
         )
     ))

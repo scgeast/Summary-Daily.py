@@ -168,26 +168,26 @@ def bar_with_target_line(df, x, y_actual, y_target, title, template="plotly_whit
         textposition='outside',
     ))
     
-    # Tambahkan line chart DASH untuk target dengan warna ORANGE
+   # Tambahkan line chart DASH untuk target dengan warna BLOOD MOON (merah darah)
     fig.add_trace(go.Scatter(
         x=df[x],
         y=df[y_target],
         name='Target',
         mode='lines+markers+text',
         line=dict(
-            color='orange',  # Warna orange
+            color='#8B0000',  # Warna Blood Moon (Dark Red)
             width=3,
             dash='dash'  # Garis putus-putus
         ),
         marker=dict(
             size=8,
-            color='orange',
+            color='#8B0000',  # Warna Blood Moon
             symbol='circle'
         ),
         text=df[y_target].apply(lambda x: f"{x:,.0f}"),
         textposition='top center',
         textfont=dict(
-            color='orange',
+            color='#8B0000',  # Warna Blood Moon
             size=12
         )
     ))

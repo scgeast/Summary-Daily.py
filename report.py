@@ -52,7 +52,7 @@ st.markdown(
       }}
       .metric-card {{
         background: linear-gradient(135deg, {card_bg} 0%, {card_bg} 70%, {accent}22 100%);
-        border: 1px solid {accent}33; border-radius: 18px; padding: 16px; 
+        border: 1px solid {accent}33; border-radius: 18px; padding: 16px;
         box-shadow: 0 0 12px {accent}55, inset 0 0 25px {accent_light}11;
       }}
       .metric-value {{
@@ -149,73 +149,27 @@ def bar_desc(df, x, y, title, color_base, color_highlight, template="plotly_whit
 
     return fig
 
-# ---------- BAR CHART WITH TARGET LINE ----------
-def bar_with_target_line(df, x, y_actual, y_target, title, template="plotly_white"):
+# ---------- LINE CHART ----------
+def line_chart(df, x, y, title, template="plotly_white"):
     if df.empty:
         return None
-    
-    # Buat figure dengan bar chart untuk actual
-    fig = px.bar(
-        df, x=x, y=y_actual, template=template, title=title,
-        color_discrete_sequence=[futur_colors[0]],  # Warna untuk actual
-        text_auto=',.0f'
+    fig = px.line(
+        df, x=x, y=y, template=template,
+        title=title, markers=True, color_discrete_sequence=[accent_light] # Warna khusus untuk garis target
     )
-    
-    # Tambahkan line chart untuk target
-    fig.add_trace(px.line(
-        df, x=x, y=y_target, template=template,
-        color_discrete_sequence=[futur_colors[1]],  # Warna berbeda untuk target
-        markers=True
-    ).data[0])
-    
-    # Update layout
+    # Update trace untuk menambahkan label data
+    fig.update_traces(
+        texttemplate=f"%{{y:.0f}}", # Format angka bulat
+        textposition="top center",
+        line=dict(width=3, dash='dash') # Gaya garis target (opsional)
+    )
     fig.update_layout(
-        xaxis_title=None, 
-        yaxis_title="Volume",
-        bargap=0.35,
         plot_bgcolor=bg_plot,
         paper_bgcolor=bg_paper,
-        font=dict(color=txt_color),
-        showlegend=True,
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1
-        )
+        font=dict(color=txt_color)
     )
-    
-    # Update traces untuk menambahkan data labels pada line
-    fig.update_traces(
-        textposition="outside",
-        cliponaxis=False,
-        selector=dict(type='bar')
-    )
-    
-    fig.update_traces(
-        line=dict(width=3),
-        marker=dict(size=8),
-        texttemplate='%{y:,}',
-        textposition="top center",
-        selector=dict(type='scatter')
-    )
-    
-    # Update axes
     fig.update_yaxes(linecolor=accent, gridcolor=accent_light)
     fig.update_xaxes(linecolor=accent, gridcolor=accent_light)
-    
-    return fig
-
-# ---------- PIE CHART ----------
-def pie_chart(df, names, values, title):
-    if df.empty:
-        return None
-    fig = px.pie(
-        df, names=names, values=values, template=chart_template,
-        title=title, hole=0.35, color_discrete_sequence=futur_colors
-    )
-    fig.update_traces(textinfo="percent+label")
     return fig
 
 # ---------- GROUP BAR CHART ----------
@@ -228,14 +182,15 @@ def group_bar(df, x, y, color, title):
     )
     return fig
 
-# ---------- LINE CHART ----------
-def line_chart(df, x, y, title):
+# ---------- PIE CHART ----------
+def pie_chart(df, names, values, title):
     if df.empty:
         return None
-    fig = px.line(
-        df, x=x, y=y, template=chart_template,
-        title=title, markers=True, color_discrete_sequence=futur_colors
+    fig = px.pie(
+        df, names=names, values=values, template=chart_template,
+        title=title, hole=0.35, color_discrete_sequence=futur_colors
     )
+    fig.update_traces(textinfo="percent+label")
     return fig
 
 # ========== UPLOAD DATA DI SIDEBAR ==========
@@ -303,36 +258,6 @@ DF_DIST = col_distance
 DF_TRCK = col_truck
 DF_ENDC = col_endcust
 
-# ========== TARGET VOLUME MANUAL PER PLANT ==========
-st.sidebar.header("🎯 Target Volume per Plant")
-
-# Dapatkan daftar plant unik dari data
-if DF_PLNT:
-    all_plants = sorted(df[DF_PLNT].dropna().astype(str).unique().tolist())
-    
-    # Inisialisasi session state untuk menyimpan target
-    if 'plant_targets' not in st.session_state:
-        st.session_state.plant_targets = {}
-    
-    st.sidebar.markdown("**Isi Target Volume Bulanan per Plant:**")
-    
-    # Input target untuk setiap plant
-    for plant in all_plants:
-        current_target = st.session_state.plant_targets.get(plant, 0)
-        target = st.sidebar.number_input(
-            f"Target {plant}",
-            min_value=0,
-            value=int(current_target),
-            step=1000,
-            key=f"target_{plant}"
-        )
-        st.session_state.plant_targets[plant] = target
-    
-    # Tombol reset semua target
-    if st.sidebar.button("🔄 Reset Semua Target"):
-        for plant in all_plants:
-            st.session_state.plant_targets[plant] = 0
-        st.experimental_rerun()
 
 # ========== FILTER DATA ==========
 with st.expander("🔍 Filter Data", expanded=True):
@@ -364,7 +289,7 @@ with st.expander("🔍 Filter Data", expanded=True):
         sel_plant = "All"
 
     if st.button("🔄 Reset Filter"):
-        st.experimental_rerun()
+        st.rerun() # Gunakan st.rerun() untuk versi baru
 
 # Apply filter mask
 mask = (df[DF_DATE].dt.date >= start_date) & (df[DF_DATE].dt.date <= end_date)
@@ -375,6 +300,19 @@ if DF_PLNT and sel_plant != "All":
 
 df_f = df.loc[mask].copy()
 day_span = max((end_date - start_date).days + 1, 1)
+
+
+# ========== SIDEBAR FOR TARGET VOLUME PER PLANT ==========
+target_volumes = {}
+if DF_PLNT:
+    st.sidebar.header("🎯 Target Volume / Month")
+    unique_plants = sorted(df[DF_PLNT].dropna().astype(str).unique().tolist())
+    for plant in unique_plants:
+        key = f"target_{plant}"
+        target_volumes[plant] = st.sidebar.number_input(f"Target {plant}", value=0, step=1, key=key)
+else:
+    st.sidebar.info("Kolom Plant Name tidak ditemukan, tidak ada input target volume.")
+
 
 # ========== SUMMARIZE (KPI CARDS) ==========
 st.markdown("<div class='section-title'>🧭 Summarize</div>", unsafe_allow_html=True)
@@ -452,35 +390,73 @@ if pick == "Logistic":
     if fig1:
         st.plotly_chart(fig1, use_container_width=True)
 
-    # Chart Volume per Plant (Dengan Target Line)
+    # Chart Volume per Plant
     if DF_PLNT:
-        # Data actual per plant
         vol_plant = (
             df_f.groupby(DF_PLNT, as_index=False)[DF_QTY]
             .sum()
             .rename(columns={DF_QTY: "Actual"})
         )
-        
-        # Tambahkan kolom target jika ada target yang diisi
-        if hasattr(st.session_state, 'plant_targets') and st.session_state.plant_targets:
-            vol_plant["Target"] = vol_plant[DF_PLNT].map(st.session_state.plant_targets).fillna(0)
-            
-            # Buat chart dengan target line
-            fig3_with_target = bar_with_target_line(
-                vol_plant, 
-                DF_PLNT, 
-                "Actual", 
-                "Target", 
-                "Total Volume per Plant Name (vs Target)", 
-                chart_template
-            )
-            if fig3_with_target:
-                st.plotly_chart(fig3_with_target, use_container_width=True)
-        else:
-            # Jika tidak ada target, tampilkan chart biasa
-            fig3 = bar_desc(vol_plant, DF_PLNT, "Actual", "Total Volume per Plant Name", accent, accent_light, chart_template)
-            if fig3:
-                st.plotly_chart(fig3, use_container_width=True)
+        # Buat DataFrame untuk Target Volume
+        target_data = pd.DataFrame(list(target_volumes.items()), columns=[DF_PLNT, 'Target'])
+
+        # Gabungkan data Actual dan Target
+        merged_data = pd.merge(vol_plant, target_data, on=DF_PLNT, how='outer').fillna(0) # Outer join untuk menangani plant tanpa actual/target
+        merged_data['Actual'] = pd.to_numeric(merged_data['Actual'], errors='coerce').fillna(0)
+        merged_data['Target'] = pd.to_numeric(merged_data['Target'], errors='coerce').fillna(0)
+
+        # Plot bar chart untuk Actual
+        fig3_bar = px.bar(
+            merged_data,
+            x=DF_PLNT,
+            y='Actual',
+            template=chart_template,
+            title="Total Volume per Plant Name (Actual vs Target)",
+            color='Actual',
+            color_continuous_scale=futur_colors
+        )
+        fig3_bar.update_traces(
+            texttemplate=f"%{{y:.0f}}",
+            textposition="outside",
+            cliponaxis=False,
+            name='Actual', # Nama untuk legenda
+            showlegend=True
+        )
+
+        # Plot line chart untuk Target
+        fig3_line = px.line(
+            merged_data,
+            x=DF_PLNT,
+            y='Target',
+            template=chart_template,
+            markers=True # Tambahkan marker
+        )
+        fig3_line.update_traces(
+            line=dict(color=accent_light, width=3, dash='dash'),
+            text=merged_data['Target'], # Data label
+            texttemplate='%{text:.0f}',
+            textposition='top center',
+            name='Target', # Nama untuk legenda
+            showlegend=True
+        )
+
+        # Gabungkan plot
+        fig3 = fig3_bar
+        fig3.add_trace(fig3_line.data[0]) # Tambahkan trace dari line chart
+
+        # Update layout
+        fig3.update_layout(
+            xaxis_title=None, yaxis_title=None, bargap=0.35,
+            coloraxis_showscale=False,
+            plot_bgcolor=bg_plot,
+            paper_bgcolor=bg_paper,
+            font=dict(color=txt_color),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        fig3.update_yaxes(linecolor=accent, gridcolor=accent_light)
+        fig3.update_xaxes(linecolor=accent, gridcolor=accent_light)
+
+        st.plotly_chart(fig3, use_container_width=True)
 
     # Chart Avg Volume / Day per Area
     if DF_AREA:
@@ -571,27 +547,27 @@ if pick == "Sales & End Customer":
     # End Customer - Opsi pilihan
     if DF_ENDC:
         st.markdown("<div class='subtitle'>👥 End Customer</div>", unsafe_allow_html=True)
-        
+
         # Tambahkan opsi untuk memilih tampilan
         view_option = st.radio(
-            "Tampilkan:", 
-            ["Semua Customer", "Top 25 Customer"], 
+            "Tampilkan:",
+            ["Semua Customer", "Top 25 Customer"],
             horizontal=True
         )
-        
+
         endc = (
             df_f.groupby(DF_ENDC, as_index=False)[DF_QTY]
             .sum()
             .rename(columns={DF_QTY: "Total Volume"})
             .sort_values("Total Volume", ascending=False)
         )
-        
+
         if view_option == "Top 25 Customer":
             endc = endc.head(25)
             title = "Top 25 End Customers by Total Volume"
         else:
             title = "Total Volume per End Customer Name"
-        
+
         figB = bar_desc(endc, DF_ENDC, "Total Volume", title, accent, accent_light, chart_template)
         if figB:
             st.plotly_chart(figB, use_container_width=True)
